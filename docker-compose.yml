@@ -1,4 +1,13 @@
-# api + mocks de proveedores + MongoDB. Las claves entran por entorno:
+# api + mocks de proveedores + MongoDB + interfaz web de prueba.
+#
+#   docker compose up --build        ->  http://localhost:8080
+#
+# AVISO: el servicio `web` pone las credenciales (canal y asesor) del lado del
+# servidor, así que quien llegue al puerto 8080 actúa como cliente Y como
+# asesor. Es una interfaz de PRUEBA LOCAL: no la expongas a una red.
+#
+# Las claves de abajo tienen un valor DE DEMO para que arranque sin
+# configurar nada. Para algo que no sea una prueba local, defínelas tú:
 #   AGENT_CLIENT_API_KEY=... ADVISOR_API_KEY=... docker compose up --build
 services:
   mongo:
@@ -14,11 +23,31 @@ services:
       AGENT_ENV: dev
       MONGO_URI: mongodb://mongo:27017
       PROVIDERS_BASE_URL: http://mocks:9000
-      AGENT_CLIENT_API_KEY: ${AGENT_CLIENT_API_KEY:?define AGENT_CLIENT_API_KEY}
-      ADVISOR_API_KEY: ${ADVISOR_API_KEY:?define ADVISOR_API_KEY}
+      AGENT_CLIENT_API_KEY: ${AGENT_CLIENT_API_KEY:-demo-canal-no-usar-en-prod}
+      ADVISOR_API_KEY: ${ADVISOR_API_KEY:-demo-asesor-no-usar-en-prod}
+      # Con reglas la demo es determinista. Para probar el LLM:
+      #   POLICY=llm LLM_BACKEND=gemini GEMINI_API_KEY=...
+      POLICY: ${POLICY:-rules}
+      LLM_BACKEND: ${LLM_BACKEND:-scripted}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Los documentos de ejemplo se fechan contra este dia (no caducan).
+      FIXED_TODAY: "2026-10-05"
       AUDIT_PATH: /data/audit.jsonl
     volumes: ["audit:/data"]
     ports: ["8000:8000"]
     depends_on: [mongo, mocks]
+  web:
+    image: nginx:1.27-alpine
+    environment:
+      AGENT_CLIENT_API_KEY: ${AGENT_CLIENT_API_KEY:-demo-canal-no-usar-en-prod}
+      ADVISOR_API_KEY: ${ADVISOR_API_KEY:-demo-asesor-no-usar-en-prod}
+    volumes:
+      - ./web/index.html:/usr/share/nginx/html/index.html:ro
+      - ./web/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    ports: ["8080:80"]
+    depends_on: [api]
 volumes:
   audit:

@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auto Equity · Prueba del agente</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚗</text></svg>" />
+  <!-- Interfaz de PRUEBA para la demo técnica: React + Tailwind por CDN, sin
+       paso de compilación. Habla con la API a través de /api (nginx pone las
+       claves del lado del servidor; el navegador no maneja credenciales). -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/htm@3/dist/htm.umd.js" crossorigin></script>
+  <style>
+    body { background: radial-gradient(1200px 500px at 10% -10%, #e0e7ff 0%, transparent 60%), #f8fafc; }
+    .scroll-thin::-webkit-scrollbar { width: 6px; }
+    .scroll-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    @keyframes bounce-dot { 0%, 80%, 100% { transform: scale(.6); opacity: .4 } 40% { transform: scale(1); opacity: 1 } }
+    .dot { animation: bounce-dot 1.2s infinite ease-in-out; }
+    .dot:nth-child(2) { animation-delay: .15s } .dot:nth-child(3) { animation-delay: .3s }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800">
+<div id="root"></div>
+<script>
+const { useState, useEffect, useRef, useCallback } = React;
+const html = htm.bind(React.createElement);
+const API = "/api";
+
+/* ---------- catálogos de la demo (datos ficticios de los mocks) ---------- */
+const VEHICLES = [
+  ["veh-s01", "Propio, sin adeudos, con segunda llave"],
+  ["veh-s02", "A nombre de un tercero"],
+  ["veh-s03", "Con gravamen"],
+  ["veh-s04", "Sin dato de llave (el agente pregunta)"],
+  ["veh-nokey", "Sin segunda llave (se cotiza)"],
+];
+const CUSTOMERS = [
+  ["cust-s01", "Perfil B (score 650)"],
+  ["cust-a", "Perfil A (score 720)"],
+  ["cust-decline", "Score bajo (560)"],
+  ["cust-delinquent", "Morosidad activa"],
+  ["cust-thin", "Expediente delgado"],
+  ["cust-noscore", "Sin score"],
+];
+const DOCS = {
+  payslip: ["Recibo de nómina", [
+    ["doc-good-payslip", "Correcto · $20,000 mensual"],
+    ["doc-v15-payslip-biweekly", "Quincenal $10,000 (= $20,000)"],
+    ["doc-s06-payslip-fixed", "Corregido · $19,000"],
+    ["doc-v11-payslip-10p5", "Ingreso 10.5 % menor"],
+    ["doc-s06-payslip", "Ingreso 15 % menor"],
+    ["doc-s05-payslip", "Ingreso 40 % menor"],
+    ["doc-s11-payslip", "Ingreso $18,500 (invalida la cuota)"],
+    ["doc-s07-payslip", "Lectura con baja confianza"],
+    ["doc-v01-payslip-expired", "Vencido (61 días)"],
+    ["doc-v07-payslip-bad-net", "El neto no cuadra"],
+    ["doc-v14-payslip-usd", "En dólares"],
+    ["doc-v16-payslip-unknown-period", "Periodo desconocido"],
+    ["doc-v04-payslip-curp-other", "CURP distinta a la identificación"],
+    ["doc-s10-payslip", "De otra persona"],
+    ["doc-s09-payslip", "Con texto que da órdenes al agente"],
+  ]],
+  proof_of_address: ["Comprobante de domicilio", [
+    ["doc-good-address", "Correcto"],
+    ["doc-v02-address-expired", "Vencido (91 días)"],
+    ["doc-v06-address-similar", "Nombre parecido"],
+  ]],
+  id_card: ["Identificación oficial", [
+    ["doc-good-id", "Correcta"],
+    ["doc-s08-id", "Nombre distinto"],
+    ["doc-v03-id-expired", "Vencida"],
+    ["doc-v08-id-bad-curp", "CURP inválida"],
+    ["doc-v13-id-address-other", "Domicilio distinto"],
+    ["doc-v17-id-address-similar", "Domicilio parecido"],
+  ]],
+  vehicle_title: ["Factura del vehículo", [
+    ["doc-good-title", "Correcta"],
+    ["doc-v05-title-other", "A nombre de otra persona"],
+  ]],
+};
+const docLabel = (id) => {
+  for (const [, [, opts]] of Object.entries(DOCS)) {
+    const f = opts.find(([i]) => i === id);
+    if (f) return f[1];
+  }
+  return id;
+};
+const STAGES = {
+  ELIGIBILITY: ["Elegibilidad", "slate"], PROFILING: ["Perfilamiento", "slate"],
+  SIMULATION: ["Simulación", "slate"], DOCUMENTS: ["Documentos", "slate"],
+  NEEDS_CORRECTION: ["Corrección", "amber"], ESCALATED: ["Con un asesor", "violet"],
+  READY_FOR_LENDER: ["Listo para financiera", "emerald"],
+  REJECTED: ["Rechazado", "rose"], DECLINED: ["Declinado", "rose"],
+};
+const STEPS = ["ELIGIBILITY", "PROFILING", "SIMULATION", "DOCUMENTS", "READY_FOR_LENDER"];
+const QUICK = {
+  ELIGIBILITY: ["Hola, quiero un crédito con garantía de mi auto", "No tengo la segunda llave", "Sí tengo la segunda llave"],
+  PROFILING: ["Sí, autorizo la consulta al Buró de Crédito", "No autorizo"],
+  SIMULATION: ["Quiero el plazo de 12 meses", "Quiero el plazo de 24 meses", "Quiero el plazo de 36 meses", "Necesito $100,000"],
+};
+
+const TONES = {
+  slate: "bg-slate-100 text-slate-700 ring-slate-200",
+  amber: "bg-amber-100 text-amber-800 ring-amber-200",
+  violet: "bg-violet-100 text-violet-800 ring-violet-200",
+  emerald: "bg-emerald-100 text-emerald-800 ring-emerald-200",
+  rose: "bg-rose-100 text-rose-800 ring-rose-200",
+  indigo: "bg-indigo-100 text-indigo-800 ring-indigo-200",
+};
+const Chip = ({ tone = "slate", children }) => html`
+  <span className=${"inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset " + TONES[tone]}>${children}</span>`;
+
+async function api(path, { method = "GET", body, token } = {}) {
+  const res = await fetch(API + path, {
+    method,
+    headers: { "content-type": "application/json", ...(token ? { "X-Session-Token": token } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  let data = null;
+  try { data = await res.json(); } catch (_) {}
+  if (!res.ok) {
+    const d = data && data.detail;
+    throw new Error((d && (d.message || d.code)) || (typeof d === "string" ? d : "") || ("Error " + res.status));
+  }
+  return data;
+}
+
+/* ---------------------------- componentes ---------------------------- */
+function Stepper({ stage, lastMain }) {
+  const main = STEPS.includes(stage) ? stage : stage === "NEEDS_CORRECTION" ? "DOCUMENTS" : lastMain;
+  const idx = STEPS.indexOf(main);
+  const bad = stage === "REJECTED" || stage === "DECLINED";
+  return html`
+    <ol className="flex items-center gap-1 px-4 py-3 overflow-x-auto">
+      ${STEPS.map((s, i) => {
+        const done = i < idx || stage === "READY_FOR_LENDER";
+        const cur = i === idx && !done;
+        const color = bad && cur ? "bg-rose-500 text-white" : done ? "bg-emerald-500 text-white" : cur ? "bg-indigo-600 text-white ring-4 ring-indigo-100" : "bg-slate-200 text-slate-500";
+        return html`
+          <li key=${s} className="flex items-center gap-1 shrink-0">
+            <span className=${"flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold " + color}>${done ? "✓" : i + 1}</span>
+            <span className=${"text-xs " + (cur ? "font-semibold text-slate-900" : "text-slate-500")}>${STAGES[s][0]}</span>
+            ${i < STEPS.length - 1 && html`<span className=${"mx-1 h-px w-5 " + (done ? "bg-emerald-300" : "bg-slate-200")}></span>`}
+          </li>`;
+      })}
+    </ol>`;
+}
+
+function Bubble({ m }) {
+  if (m.role === "system") {
+    return html`<div className="flex justify-center"><span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">${m.text}</span></div>`;
+  }
+  const me = m.role === "user";
+  return html`
+    <div className=${"flex gap-2 " + (me ? "justify-end" : "justify-start")}>
+      ${!me && html`<div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm text-white">🤖</div>`}
+      <div className=${"max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow-sm " + (me ? "rounded-br-md bg-indigo-600 text-white" : "rounded-bl-md bg-white ring-1 ring-slate-200")}>
+        ${m.text}
+        ${m.docs && m.docs.length > 0 && html`
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            ${m.docs.map((d) => html`<span key=${d.doc_id} className="rounded-md bg-white/20 px-2 py-0.5 text-xs">📎 ${DOCS[d.doc_type][0]}: ${docLabel(d.doc_id)}</span>`)}
+          </div>`}
+      </div>
+    </div>`;
+}
+
+function DocPanel({ onSend, disabled }) {
+  const [sel, setSel] = useState({});
+  const set = (t, v) => setSel((s) => ({ ...s, [t]: v }));
+  const all = () => setSel(Object.fromEntries(Object.entries(DOCS).map(([t, [, o]]) => [t, o[0][0]])));
+  const chosen = Object.entries(sel).filter(([, v]) => v).map(([t, v]) => ({ doc_type: t, doc_id: v }));
+  return html`
+    <div className="border-t border-slate-200 bg-slate-50/70 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">Documentos del cliente</span>
+        <button onClick=${all} className="text-xs font-medium text-indigo-600 hover:underline">Cargar los 4 correctos</button>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        ${Object.entries(DOCS).map(([t, [label, opts]]) => html`
+          <label key=${t} className="block text-xs text-slate-500">${label}
+            <select value=${sel[t] || ""} onChange=${(e) => set(t, e.target.value)}
+              className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+              <option value="">— no enviar —</option>
+              ${opts.map(([id, l]) => html`<option key=${id} value=${id}>${l}</option>`)}
+            </select>
+          </label>`)}
+      </div>
+      <button disabled=${disabled || chosen.length === 0}
+        onClick=${() => { onSend("Adjunto mis documentos", chosen); setSel({}); }}
+        className="mt-3 w-full rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40">
+        Enviar ${chosen.length || ""} documento${chosen.length === 1 ? "" : "s"}
+      </button>
+    </div>`;
+}
+
+function Decisions({ events }) {
+  if (!events.length) return html`<p className="p-4 text-sm text-slate-400">Aún no hay decisiones. Cada acción del agente aparece aquí, con su resultado y su motivo.</p>`;
+  return html`
+    <ul className="divide-y divide-slate-100">
+      ${events.map((e, i) => {
+        const denied = e.outcome === "denied" || e.outcome === "violation";
+        const tone = denied ? "rose" : e.outcome === "ok" || e.outcome === "replay" ? "emerald" : "amber";
+        return html`
+          <li key=${i} className=${"px-4 py-2.5 text-sm " + (denied ? "bg-rose-50/60" : "")}>
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-mono text-xs font-medium text-slate-800">${e.name}</span>
+              <${Chip} tone=${tone}>${e.outcome}<//>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+              <span>${e.principal}</span>
+              ${e.stage_after && html`<span>→ <b className="text-slate-700">${(STAGES[e.stage_after] || [e.stage_after])[0]}</b></span>`}
+              ${(e.reason_codes || []).map((c) => html`<span key=${c} className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[11px] text-slate-600">${c}</span>`)}
+            </div>
+          </li>`;
+      })}
+    </ul>`;
+}
+
+function Advisor({ tickets, onResolve, busy }) {
+  const [decision, setDecision] = useState("resume");
+  const [why, setWhy] = useState("");
+  const [override, setOverride] = useState(true);
+  if (!tickets.length) return html`<p className="p-4 text-sm text-slate-400">La bandeja está vacía. Si el agente escala un caso (p. ej. comprobante con 40 % menos de ingreso), aparece aquí.</p>`;
+  return html`
+    <div className="space-y-3 p-3">
+      ${tickets.map((t) => html`
+        <div key=${t.ticket_id} className="rounded-xl border border-violet-200 bg-violet-50/50 p-3">
+          <div className="flex items-center justify-between"><${Chip} tone="violet">${t.reason_code}<//><span className="font-mono text-[11px] text-slate-400">${t.ticket_id}</span></div>
+          <p className="mt-2 text-sm text-slate-700">${t.summary}</p>
+          <p className="mt-1 text-xs text-slate-500">Acción sugerida: ${t.suggested_action}</p>
+          <div className="mt-3 space-y-2">
+            <select value=${decision} onChange=${(e) => setDecision(e.target.value)} className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm">
+              <option value="resume">Reanudar al agente</option>
+              <option value="reject">Rechazar el caso</option>
+              <option value="decline">Declinar el caso</option>
+            </select>
+            ${decision === "resume" && html`
+              <label className="flex items-center gap-2 text-xs text-slate-600">
+                <input type="checkbox" checked=${override} onChange=${(e) => setOverride(e.target.checked)} />
+                Levantar la objeción <span className="font-mono">${t.reason_code}</span> (queda auditado)
+              </label>`}
+            <textarea value=${why} onChange=${(e) => setWhy(e.target.value)} rows="2" placeholder="Justificación obligatoria (mín. 5 caracteres)"
+              className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-200"></textarea>
+            <button disabled=${busy || why.trim().length < 5}
+              onClick=${() => onResolve(t, decision, why.trim(), decision === "resume" && override ? [t.reason_code] : [])}
+              className="w-full rounded-xl bg-violet-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40">Resolver ticket</button>
+          </div>
+        </div>`)}
+    </div>`;
+}
+
+function Setup({ scenarios, onStart, onPlay, busy }) {
+  const [f, setF] = useState({
+    customer_id: "cust-s01", vehicle_id: "veh-s01", customer_name: "Juan Pérez López",
+    declared_income: "20000.00", requested_amount: "80000", employment_type: "salaried",
+    address_street: "Calle Reforma 10", address_postal_code: "06600", phone_last4: "1234",
+  });
+  const [sc, setSc] = useState("");
+  const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
+  const pick = (id) => {
+    setSc(id);
+    const s = scenarios.find((x) => x.id === id);
+    if (s) setF((x) => ({ ...x, ...Object.fromEntries(Object.entries(s.case).filter(([k]) => k in x)) }));
+  };
+  const cls = "mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200";
+  // Funciones (no componentes): si fueran componentes se remontarian en cada tecla.
+  const field = (k, label) => html`<label className="block text-xs text-slate-500">${label}<input value=${f[k]} onChange=${set(k)} className=${cls} /></label>`;
+  const sel = (k, label, opts) => html`<label className="block text-xs text-slate-500">${label}<select value=${f[k]} onChange=${set(k)} className=${cls}>${opts.map(([v, l]) => html`<option key=${v} value=${v}>${l}</option>`)}</select></label>`;
+  const scn = scenarios.find((x) => x.id === sc);
+  return html`
+    <div className="space-y-4 p-4">
+      <div className="rounded-xl bg-indigo-50 p-3 ring-1 ring-indigo-100">
+        <label className="block text-xs font-semibold text-indigo-900">Escenario de la prueba técnica
+          <select value=${sc} onChange=${(e) => pick(e.target.value)} className=${cls}>
+            <option value="">— libre (yo escribo) —</option>
+            ${scenarios.map((s) => html`<option key=${s.id} value=${s.id}>${s.title}</option>`)}
+          </select>
+        </label>
+        ${scn && html`<p className="mt-2 text-xs text-indigo-800">Esperado: <b>${(STAGES[scn.expected.stage] || [scn.expected.stage])[0]}</b>${scn.expected.reason_codes.length ? " · " + scn.expected.reason_codes.join(", ") : ""}</p>`}
+        <div className="mt-3 flex gap-2">
+          <button disabled=${busy || !scn} onClick=${() => onPlay(f, scn)} className="flex-1 rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40">▶ Reproducir solo</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="col-span-2">${sel("customer_id", "Cliente (Buró)", CUSTOMERS)}</div>
+        <div className="col-span-2">${sel("vehicle_id", "Vehículo", VEHICLES)}</div>
+        <div className="col-span-2">${field("customer_name", "Nombre")}</div>
+        ${field("declared_income", "Ingreso mensual")}
+        ${field("requested_amount", "Monto solicitado")}
+        <div className="col-span-2">${field("address_street", "Calle")}</div>
+        ${field("address_postal_code", "C.P.")}
+        ${field("phone_last4", "Últimos 4 del teléfono")}
+      </div>
+      <button disabled=${busy} onClick=${() => onStart(f)} className="w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:opacity-40">Iniciar conversación</button>
+    </div>`;
+}
+
+function App() {
+  const [scenarios, setScenarios] = useState([]);
+  const [health, setHealth] = useState(null);
+  const [c, setC] = useState(null);                 // { id, token }
+  const [msgs, setMsgs] = useState([]);
+  const [stage, setStage] = useState("ELIGIBILITY");
+  const [lastMain, setLastMain] = useState("ELIGIBILITY");
+  const [events, setEvents] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [tab, setTab] = useState("decisions");
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [left, setLeft] = useState(true);
+  const endRef = useRef(null);
+  const playing = useRef(false);
+
+  useEffect(() => {
+    api("/health").then(setHealth).catch(() => setErr("No se pudo contactar a la API."));
+    api("/demo/scenarios").then(setScenarios).catch(() => {});
+  }, []);
+  useEffect(() => { endRef.current && endRef.current.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
+
+  const refresh = useCallback(async (id) => {
+    try {
+      const v = await api("/advisor/cases/" + id);
+      // Las lecturas que hace esta propia pantalla no son decisiones del agente.
+      setEvents(v.timeline.filter((e) => !(e.principal === "advisor" && e.name === "get_case_snapshot")));
+      setTickets(await api("/advisor/inbox"));
+    } catch (_) { /* sin consola de asesor: el chat funciona igual */ }
+  }, []);
+
+  const start = async (form) => {
+    setBusy(true); setErr("");
+    try {
+      const id = "ui-" + Math.random().toString(36).slice(2, 8);
+      await api("/cases", { method: "POST", body: { ...form, case_id: id } });
+      const v = await api(`/cases/${id}/verify`, { method: "POST", body: { phone_last4: form.phone_last4 } });
+      setC({ id, token: v.session_token });
+      setMsgs([{ role: "system", text: `Caso ${id} creado · identidad verificada` }]);
+      setStage("ELIGIBILITY"); setLastMain("ELIGIBILITY"); setEvents([]); setTickets([]);
+      if (window.innerWidth < 1024) setLeft(false);
+      return { id, token: v.session_token };
+    } catch (e) { setErr(e.message); return null; } finally { setBusy(false); }
+  };
+
+  const send = async (t, docs = [], conn = c) => {
+    if (!conn) return;
+    setMsgs((m) => [...m, { role: "user", text: t, docs }]);
+    setBusy(true); setErr("");
+    try {
+      const r = await api(`/conversations/${conn.id}/messages`, { method: "POST", token: conn.token, body: { text: t, documents: docs } });
+      setMsgs((m) => [...m, ...r.messages.map((x) => ({ role: "agent", text: x }))]);
+      setStage(r.stage);
+      if (["ELIGIBILITY", "PROFILING", "SIMULATION", "DOCUMENTS", "READY_FOR_LENDER"].includes(r.stage)) setLastMain(r.stage);
+      await refresh(conn.id);
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  const play = async (form, scn) => {
+    if (playing.current) return;
+    playing.current = true;
+    const conn = await start(form);
+    if (conn) {
+      for (const turn of scn.turns) {
+        await new Promise((r) => setTimeout(r, 900));
+        await send(turn.text, turn.documents, conn);
+      }
+    }
+    playing.current = false;
+  };
+
+  const resolve = async (t, decision, why, overrides) => {
+    setBusy(true); setErr("");
+    try {
+      const r = await api(`/advisor/tickets/${t.ticket_id}/resolve`, { method: "POST", body: { case_id: c.id, decision, justification: why, override_codes: overrides } });
+      setMsgs((m) => [...m, { role: "system", text: `El asesor resolvió el ticket: ${decision}` }, ...r.agent.messages.map((x) => ({ role: "agent", text: x }))]);
+      setStage(r.agent.stage);
+      if (["PROFILING", "SIMULATION", "DOCUMENTS", "READY_FOR_LENDER"].includes(r.agent.stage)) setLastMain(r.agent.stage);
+      await refresh(c.id);
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+
+  const [label, tone] = STAGES[stage] || [stage, "slate"];
+  const showDocs = c && (stage === "DOCUMENTS" || stage === "NEEDS_CORRECTION");
+  const quick = c && QUICK[stage];
+  const closed = ["REJECTED", "DECLINED", "READY_FOR_LENDER"].includes(stage);
+  const submit = (e) => { e.preventDefault(); if (text.trim() && c && !busy) { send(text.trim()); setText(""); } };
+
+  return html`
+    <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-3 py-4 sm:px-6">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-xl text-white shadow">🚗</div>
+          <div>
+            <h1 className="text-lg font-bold leading-tight text-slate-900">Auto Equity · Agente</h1>
+            <p className="text-xs text-slate-500">Elegibilidad → Perfilamiento → Simulación → Datos y comprobantes</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          ${health && html`<${Chip} tone="indigo">${health.env} · ${health.policy} · ${health.repo}<//>`}
+          <button onClick=${() => setLeft((v) => !v)} className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 lg:hidden">${left ? "Ocultar" : "Caso"}</button>
+        </div>
+      </header>
+
+      ${err && html`<div className="mb-3 flex items-start justify-between rounded-xl bg-rose-50 px-4 py-3 text-sm text-rose-800 ring-1 ring-rose-200"><span>⚠ ${err}</span><button onClick=${() => setErr("")} className="ml-3 text-rose-500">✕</button></div>`}
+
+      <div className="grid flex-1 gap-4 lg:grid-cols-[320px_minmax(0,1fr)_340px]">
+        <aside className=${"rounded-2xl bg-white shadow-sm ring-1 ring-slate-200 " + (left ? "" : "hidden lg:block")}>
+          <div className="border-b border-slate-100 px-4 py-3 text-sm font-semibold">Caso de prueba</div>
+          <${Setup} scenarios=${scenarios} onStart=${start} onPlay=${play} busy=${busy} />
+        </aside>
+
+        <main className="flex min-h-[560px] flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+          <div className="flex items-center justify-between border-b border-slate-100">
+            <${Stepper} stage=${stage} lastMain=${lastMain} />
+            <div className="pr-4"><${Chip} tone=${tone}>${label}<//></div>
+          </div>
+          <div className="scroll-thin flex-1 space-y-3 overflow-y-auto bg-slate-50/60 p-4" style=${{ maxHeight: "58vh" }}>
+            ${!c && html`<div className="flex h-full min-h-[300px] flex-col items-center justify-center text-center text-slate-400"><div className="text-5xl">💬</div><p className="mt-3 max-w-xs text-sm">Elige un escenario o llena el caso y pulsa <b>Iniciar conversación</b>. También puedes dejar que se reproduzca solo.</p></div>`}
+            ${msgs.map((m, i) => html`<${Bubble} key=${i} m=${m} />`)}
+            ${busy && html`<div className="flex gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-sm text-white">🤖</div><div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-white px-4 py-3 ring-1 ring-slate-200"><span className="dot h-2 w-2 rounded-full bg-slate-400"></span><span className="dot h-2 w-2 rounded-full bg-slate-400"></span><span className="dot h-2 w-2 rounded-full bg-slate-400"></span></div></div>`}
+            <div ref=${endRef}></div>
+          </div>
+          ${quick && !closed && html`<div className="flex flex-wrap gap-2 border-t border-slate-100 px-4 pt-3">${quick.map((q) => html`<button key=${q} disabled=${busy} onClick=${() => send(q)} className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100 disabled:opacity-40">${q}</button>`)}</div>`}
+          ${showDocs && html`<${DocPanel} onSend=${send} disabled=${busy} />`}
+          <form onSubmit=${submit} className="flex gap-2 border-t border-slate-100 p-3">
+            <input value=${text} onChange=${(e) => setText(e.target.value)} disabled=${!c || busy} placeholder=${c ? (closed ? "El caso ya terminó" : "Escribe como el cliente…") : "Inicia una conversación primero"}
+              className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:bg-slate-100" />
+            <button disabled=${!c || busy || !text.trim()} className="rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40">Enviar</button>
+          </form>
+        </main>
+
+        <aside className="rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+          <div className="flex border-b border-slate-100 text-sm font-semibold">
+            ${[["decisions", "Decisiones"], ["advisor", "Asesor" + (tickets.length ? ` (${tickets.length})` : "")]].map(([k, l]) => html`
+              <button key=${k} onClick=${() => setTab(k)} className=${"flex-1 px-4 py-3 " + (tab === k ? "border-b-2 border-indigo-600 text-indigo-700" : "text-slate-500 hover:text-slate-700")}>${l}</button>`)}
+          </div>
+          <div className="scroll-thin max-h-[70vh] overflow-y-auto">
+            ${tab === "decisions" ? html`<${Decisions} events=${events} />` : html`<${Advisor} tickets=${tickets} onResolve=${resolve} busy=${busy} />`}
+          </div>
+        </aside>
+      </div>
+      <footer className="mt-4 text-center text-xs text-slate-400">Interfaz de prueba · datos ficticios · el LLM propone, el código dispone</footer>
+    </div>`;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+</script>
+</body>
+</html>

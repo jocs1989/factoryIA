@@ -107,6 +107,29 @@ pendiente.
 - [ ] **MongoDB real y APIs reales de OpenAI, Gemini, DeepSeek y Anthropic**: probados con `mongomock` y transportes simulados; hay una prueba de integración (`make integration`) que se omite sin servidor
 - [ ] **Fuera de alcance, no hecho**: originación, créditos activos y cobranza; CAT e IVA
 
+## Interfaz visual de prueba
+
+```bash
+docker compose up --build        # api + mocks + mongo + interfaz
+# abre http://localhost:8080
+```
+
+Una página de React + Tailwind (`web/index.html`, sin paso de compilación) para
+probar el agente sin comandos:
+
+- **Escenarios de la prueba técnica**: elige uno y pulsa **▶ Reproducir solo**, o escribe tú como el cliente.
+- **Chat** con el agente, etapa actual en la barra superior y respuestas rápidas.
+- **Documentos**: elige para cada tipo uno correcto o uno problemático (vencido, de otra persona, con texto que da órdenes, ingreso 40 % menor...) y envíalos.
+- **Decisiones**: cada acción del agente, con su resultado (`ok` / `denied`), motivos y la etapa a la que movió el caso. Ahí se ve cómo el gate niega un intento.
+- **Asesor**: la bandeja de tickets; resuelve con justificación y el agente retoma el caso.
+
+Las claves de la API **no** están en el navegador: las pone un nginx del lado del
+servidor (valores de demo por defecto; puedes definir `AGENT_CLIENT_API_KEY` y
+`ADVISOR_API_KEY`). Por eso es una interfaz **de prueba local**: quien llegue al
+puerto 8080 actúa como cliente y como asesor. Los React y Tailwind se cargan por
+CDN, así que el navegador necesita internet. Para usar un LLM real en vez de las
+reglas: `POLICY=llm LLM_BACKEND=gemini GEMINI_API_KEY=... docker compose up --build`.
+
 ## Cómo se ve la API
 
 ```bash

@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     audit_path: str = "reports/audit.jsonl"
     checkpointer: str = "memory"  # memory | mongo
     fixed_today: str = ""  # fecha fija (YYYY-MM-DD) para demos reproducibles
+    demo_endpoints: bool = (
+        False  # /demo/scenarios, solo para la interfaz de prueba
+    )
     providers_base_url: str = ""  # vacio = motor de mocks en proceso
     mongo_uri: str = ""
     mongo_db: str = "auto_equity"

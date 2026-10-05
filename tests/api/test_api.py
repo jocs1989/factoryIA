@@ -215,3 +215,18 @@ def test_el_cliente_no_puede_usar_la_consola_del_asesor(
         },
     )
     assert r.status_code == 401
+
+
+def test_escenarios_de_demo_solo_donde_esta_activo(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    r = client.get("/demo/scenarios")
+    assert r.status_code == 200 and len(r.json()) == 12
+    first = r.json()[0]
+    assert {"id", "title", "case", "turns", "expected"} <= set(first)
+    # en un ambiente sin demo (p. ej. prod) no existe
+    rt = build_runtime(
+        load_settings().model_copy(update={"demo_endpoints": False})
+    )
+    with TestClient(create_app(rt)) as c:
+        assert c.get("/demo/scenarios").status_code == 404

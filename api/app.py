@@ -16,6 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from agent.runner import TurnResult
 from agent.runtime import Runtime, build_runtime
+from agent.scenarios import load_scenarios
 from agent.types import CustomerEvent, DocRef
 from config.settings import load_settings
 from tools.executor import ToolResult, ToolStatus
@@ -141,6 +142,17 @@ def create_app(runtime: Runtime | None = None) -> FastAPI:
             "policy": r.policy.name,
             "repo": r.settings.repo_backend,
         }
+
+    @app.get("/demo/scenarios")
+    def demo_scenarios(request: Request) -> list[dict[str, Any]]:
+        """Escenarios de demostracion para la interfaz de prueba.
+
+        Son datos ficticios; solo se exponen donde `demo_endpoints` esta
+        activo (mock y dev), nunca en prod.
+        """
+        if not rt(request).settings.demo_endpoints:
+            raise HTTPException(404, "no disponible en este ambiente")
+        return [s.model_dump(mode="json") for s in load_scenarios()]
 
     @app.post("/cases", status_code=201)
     def create_case(

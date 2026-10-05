@@ -5,4 +5,5 @@ repo_backend: mongo
 audit_backend: jsonl
 checkpointer: memory
 providers_base_url: http://mocks:9000
+demo_endpoints: true
 log_format: console

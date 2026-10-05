@@ -1,0 +1,23 @@
+# Sirve la interfaz de prueba y reenvía /api/* a la API poniendo la clave del
+# lado del servidor: el navegador nunca ve ni maneja credenciales.
+# (nginx sustituye ${...} al arrancar con las variables de entorno.)
+server {
+  listen 80;
+  root /usr/share/nginx/html;
+
+  location = / { try_files /index.html =404; }
+
+  # Consola del asesor: otra credencial, otro principal.
+  location /api/advisor/ {
+    proxy_pass http://api:8000/advisor/;
+    proxy_set_header X-API-Key "${ADVISOR_API_KEY}";
+    proxy_set_header Host $host;
+  }
+
+  # Canal del cliente.
+  location /api/ {
+    proxy_pass http://api:8000/;
+    proxy_set_header X-API-Key "${AGENT_CLIENT_API_KEY}";
+    proxy_set_header Host $host;
+  }
+}
