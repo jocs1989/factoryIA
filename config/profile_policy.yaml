@@ -1,0 +1,8 @@
+# Valores ilustrativos; el negocio los ajusta. version sube con cada cambio.
+version: "1.0.0"
+bands:
+  - {band: A, min_score: 700, profile: preferente, max_ltv: "0.60", annual_rate: "0.24"}
+  - {band: B, min_score: 640, profile: estandar, max_ltv: "0.50", annual_rate: "0.30"}
+  - {band: C, min_score: 580, profile: con_restriccion, max_ltv: "0.40", annual_rate: "0.38"}
+  - {band: D, min_score: 0, profile: no_aprobado, max_ltv: null, annual_rate: null}
+terms_months: [12, 24, 36, 48]

@@ -1,0 +1,14 @@
+# Valores ilustrativos; el negocio los ajusta. version sube con cada cambio.
+version: "1.0.0"
+income:
+  accept_diff_pct: "10"        # hasta aqui se acepta
+  correction_diff_pct: "25"    # hasta aqui se pide correccion; mas, escala
+max_payment_to_income: "0.35"
+min_field_confidence: "0.85"
+name_similarity_min: "0.85"
+net_tolerance: "1.00"
+validity_days:
+  payslip: 60
+  proof_of_address: 90
+  bank_statement: 60
+  tax_certificate: 90
