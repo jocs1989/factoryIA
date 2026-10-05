@@ -575,3 +575,23 @@ def test_snapshot_no_expone_datos_personales(env: Env) -> None:
     r = env.call("get_case_snapshot")
     text = str(r.output)
     assert "Juan" not in text and "cust-s01" not in text and "1234" not in text
+
+
+def test_domicilio_de_la_identificacion_distinto_pide_correccion(
+    env: Env,
+) -> None:
+    env.advance_to_documents()
+    env.attach_all({**GOOD_DOCS, "id_card": "doc-v13-id-address-other"})
+    r = env.call("run_document_validations")
+    assert r.output["outcome"] == "CORRECTION"
+    assert "ADDRESS_MISMATCH" in r.reason_codes
+    msg = env.call("request_customer_correction")
+    assert "domicilio" in msg.output["message"]
+
+
+def test_comprobante_quincenal_se_normaliza_y_llega_a_listo(env: Env) -> None:
+    env.advance_to_documents()
+    env.attach_all({**GOOD_DOCS, "payslip": "doc-v15-payslip-biweekly"})
+    assert env.call("run_document_validations").output["outcome"] == "OK"
+    assert env.call("mark_ready_for_lender").ok
+    assert env.case().data["verified_income"] == "20000.00"

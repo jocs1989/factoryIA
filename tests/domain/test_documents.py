@@ -12,9 +12,11 @@ from domain.documents import (
     id_not_expired,
     is_vigent,
     load_document_policy,
+    match_address,
     match_names,
     net_matches,
     payment_capacity_ok,
+    to_monthly,
     valid_curp,
     valid_rfc,
 )
@@ -118,3 +120,36 @@ def test_confianza_cruzada_con_validadores(
     conf: str, validators: bool, ok: bool
 ) -> None:
     assert extraction_trusted(D(conf), POLICY, validators) is ok
+
+
+@pytest.mark.parametrize(
+    ("street", "cp", "expected"),
+    [
+        ("Calle Reforma 10", "06600", NameMatch.MATCH),
+        ("calle  REFORMA, 10", "06600", NameMatch.MATCH),
+        ("Calle Reforma 10 A", "06600", NameMatch.SIMILAR),
+        ("Calle Reforma 10", "06601", NameMatch.MISMATCH),  # CP exacto
+        ("Avenida Juarez 500", "06600", NameMatch.MISMATCH),
+        ("", "06600", NameMatch.MISMATCH),
+    ],
+)
+def test_domicilio(street: str, cp: str, expected: NameMatch) -> None:
+    got = match_address("Calle Reforma 10", "06600", street, cp)
+    assert got is expected
+
+
+@pytest.mark.parametrize(
+    ("amount", "period", "expected"),
+    [
+        ("20000", "monthly", "20000.00"),
+        ("10000", "biweekly", "20000.00"),
+        ("5000", "weekly", "21666.50"),
+        ("10000", " Biweekly ", "20000.00"),
+        ("10000", "daily", None),
+    ],
+)
+def test_ingreso_mensualizado(
+    amount: str, period: str, expected: str | None
+) -> None:
+    got = to_monthly(D(amount), period, POLICY)
+    assert got == (None if expected is None else D(expected))

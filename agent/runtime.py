@@ -43,6 +43,8 @@ REQUIRED_CASE_FIELDS = (
     "requested_amount",
     "employment_type",
     "phone_last4",
+    "address_street",
+    "address_postal_code",
 )
 
 

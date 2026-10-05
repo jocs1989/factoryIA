@@ -21,6 +21,8 @@ DEFAULT_CASE = {
     "declared_income": "20000.00",
     "requested_amount": "80000",
     "employment_type": "salaried",
+    "address_street": "Calle Reforma 10",
+    "address_postal_code": "06600",
     "phone_last4": "1234",
 }
 HELP = (

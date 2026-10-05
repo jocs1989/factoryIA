@@ -13,6 +13,10 @@ REJECTION_CODES = {"VEHICLE_NOT_OWNED", "VEHICLE_ENCUMBERED"}
 MISMATCH_CODES = {
     "INCOME_MISMATCH": "ingreso",
     "IDENTITY_MISMATCH": "identidad",
+    "ADDRESS_MISMATCH": "domicilio",
+    "ADDRESS_SIMILAR": "domicilio",
+    "CURRENCY_MISMATCH": "moneda",
+    "UNSUPPORTED_PERIOD": "periodo de pago",
     "NAME_SIMILAR": "nombre",
     "FOREIGN_DOCUMENT": "documento ajeno",
     "VEHICLE_TITLE_MISMATCH": "titularidad del vehiculo",

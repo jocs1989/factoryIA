@@ -18,6 +18,8 @@ CASE: dict[str, Any] = {
     "requested_amount": "50000",
     "employment_type": "salaried",
     "phone_last4": "1234",
+    "address_street": "Calle Reforma 10",
+    "address_postal_code": "06600",
 }
 DOCS = [
     {"doc_id": "doc-good-payslip", "doc_type": "payslip"},

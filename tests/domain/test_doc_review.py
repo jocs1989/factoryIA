@@ -44,6 +44,8 @@ def good_docs() -> dict[str, DocFacts]:
                 "deductions": f("3000.00"),
                 "net_income": f("17000.00"),
                 "issue_date": f("2026-09-30"),
+                "currency": f("MXN"),
+                "pay_period": f("monthly"),
             },
         ),
         "proof_of_address": doc(
@@ -61,6 +63,8 @@ def good_docs() -> dict[str, DocFacts]:
                 "full_name": f(NAME),
                 "curp": f(CURP),
                 "expiry_date": f("2030-01-01"),
+                "street": f("Calle Reforma 10"),
+                "postal_code": f("06600"),
             },
         ),
         "vehicle_title": doc(
@@ -76,6 +80,8 @@ def good_docs() -> dict[str, DocFacts]:
 def review(docs: dict[str, DocFacts] | None = None, **kw: object):  # type: ignore[no-untyped-def]
     args: dict[str, object] = dict(
         customer_name=NAME,
+        address_street="Calle Reforma 10",
+        address_postal_code="06600",
         declared_income=D("20000"),
         employment_type="salaried",
         documents=good_docs() if docs is None else docs,
@@ -352,3 +358,88 @@ def test_empleo_desconocido() -> None:
 )
 def test_deteccion_de_inyeccion(text: str, flag: bool) -> None:
     assert looks_like_injection(text) is flag
+
+
+# --- domicilio, moneda y periodo ------------------------------------------
+
+
+def with_field(docs: dict[str, DocFacts], dtype: str, **fields: DocField):  # type: ignore[no-untyped-def]
+    docs[dtype] = doc(dtype, {**docs[dtype].fields, **fields})
+    return docs
+
+
+def test_domicilio_de_la_identificacion_distinto_pide_correccion() -> None:
+    docs = with_field(
+        good_docs(),
+        "id_card",
+        street=f("Avenida Juarez 500"),
+        postal_code=f("06000"),
+    )
+    r = review(docs)
+    assert r.outcome is ReviewOutcome.CORRECTION
+    assert codes(r) == {"ADDRESS_MISMATCH"}
+
+
+def test_mismo_cp_y_calle_parecida_es_domicilio_similar() -> None:
+    docs = with_field(good_docs(), "id_card", street=f("Calle Reforma 10 A"))
+    assert codes(review(docs)) == {"ADDRESS_SIMILAR"}
+
+
+def test_cp_distinto_aunque_la_calle_sea_igual_no_coincide() -> None:
+    docs = with_field(good_docs(), "id_card", postal_code=f("06601"))
+    assert codes(review(docs)) == {"ADDRESS_MISMATCH"}
+
+
+def test_el_comprobante_de_domicilio_tambien_se_compara() -> None:
+    docs = with_field(
+        good_docs(),
+        "proof_of_address",
+        street=f("Calle Falsa 123"),
+        postal_code=f("99999"),
+    )
+    assert codes(review(docs)) == {"ADDRESS_MISMATCH"}
+
+
+def test_moneda_distinta_a_mxn_pide_correccion() -> None:
+    docs = with_field(good_docs(), "payslip", currency=f("USD"))
+    r = review(docs)
+    assert r.outcome is ReviewOutcome.CORRECTION
+    assert "CURRENCY_MISMATCH" in codes(r)
+
+
+def test_ingreso_quincenal_se_lleva_a_mensual() -> None:
+    # 10000 por quincena = 20000 al mes: coincide con lo declarado
+    docs = with_field(
+        good_docs(),
+        "payslip",
+        gross_income=f("10000.00"),
+        deductions=f("1500.00"),
+        net_income=f("8500.00"),
+        pay_period=f("biweekly"),
+    )
+    r = review(docs)
+    assert r.outcome is ReviewOutcome.OK
+    assert r.verified_income == D("20000.00")
+
+
+def test_ingreso_quincenal_bajo_se_detecta_ya_normalizado() -> None:
+    # 6000 por quincena = 12000 al mes: 40 % menos, escala
+    docs = with_field(
+        good_docs(),
+        "payslip",
+        gross_income=f("6000.00"),
+        deductions=f("900.00"),
+        net_income=f("5100.00"),
+        pay_period=f("biweekly"),
+    )
+    r = review(docs)
+    assert r.outcome is ReviewOutcome.ESCALATE
+    assert r.verified_income == D("12000.00")
+
+
+def test_periodo_desconocido_no_se_adivina() -> None:
+    docs = with_field(good_docs(), "payslip", pay_period=f("daily"))
+    r = review(docs)
+    assert r.outcome is ReviewOutcome.CORRECTION
+    assert "UNSUPPORTED_PERIOD" in codes(r)
+    assert r.verified_income is None

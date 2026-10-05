@@ -1,11 +1,18 @@
 # Valores ilustrativos; el negocio los ajusta. version sube con cada cambio.
-version: "1.0.0"
+version: "1.1.0"
 income:
   accept_diff_pct: "10"        # hasta aqui se acepta
   correction_diff_pct: "25"    # hasta aqui se pide correccion; mas, escala
 max_payment_to_income: "0.35"
 min_field_confidence: "0.85"
 name_similarity_min: "0.85"
+address_similarity_min: "0.80"   # calle; el codigo postal debe ser exacto
+expected_currency: "MXN"
+# Para llevar el ingreso del comprobante a mensual (el declarado es mensual).
+period_factors:
+  monthly: "1"
+  biweekly: "2"
+  weekly: "4.3333"
 net_tolerance: "1.00"
 validity_days:
   payslip: 60

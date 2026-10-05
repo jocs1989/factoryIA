@@ -28,6 +28,9 @@ def test_el_set_cubre_lo_que_dice_el_reto() -> None:
         "v-curp-distinta",
         "v-neto-no-cuadra",
         "v-ingreso-10-5-por-ciento",
+        "v-domicilio-de-la-identificacion-distinto",
+        "v-moneda-usd",
+        "v-periodo-desconocido",
     ):
         assert needed in ids
     positives = [c for c in build_eval_set() if c.should_be_ready]

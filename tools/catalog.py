@@ -74,6 +74,21 @@ CORRECTION_TEXT = {
         "El nombre del documento no coincide exactamente con el de tu "
         "solicitud; confirma o envia el documento correcto."
     ),
+    "ADDRESS_SIMILAR": (
+        "El domicilio del documento no coincide exactamente con el que "
+        "declaraste; confirma o envia un documento actualizado."
+    ),
+    "ADDRESS_MISMATCH": (
+        "El domicilio del documento no coincide con el que declaraste; "
+        "confirmalo o envia un comprobante a tu domicilio actual."
+    ),
+    "CURRENCY_MISMATCH": (
+        "El documento no esta en pesos mexicanos; envia uno en MXN."
+    ),
+    "UNSUPPORTED_PERIOD": (
+        "No pudimos reconocer el periodo de pago del comprobante; envia "
+        "uno mensual, quincenal o semanal."
+    ),
     "INCOME_MISMATCH": (
         "El ingreso que comprueba el documento es menor al que declaraste; "
         "envia un comprobante que lo respalde o corrige tu ingreso."

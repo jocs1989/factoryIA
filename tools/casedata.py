@@ -86,6 +86,8 @@ def review_case(case: Case, deps: Deps) -> DocumentReview:
     return review_documents(
         ReviewInput(
             customer_name=str(data.get("customer_name", "")),
+            address_street=str(data.get("address_street", "")),
+            address_postal_code=str(data.get("address_postal_code", "")),
             declared_income=Decimal(str(data["declared_income"])),
             employment_type=str(data.get("employment_type", "salaried")),
             documents=stored_facts(data),

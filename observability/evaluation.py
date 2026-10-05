@@ -220,6 +220,28 @@ def build_eval_set() -> list[EvalCase]:
         False,
         docs=_docs(payslip="doc-v11-payslip-10p5"),
     )
+    # Domicilio, moneda y periodo (lo pide el enunciado)
+    v(
+        "domicilio-de-la-identificacion-distinto",
+        False,
+        docs=_docs(id_card="doc-v13-id-address-other"),
+    )
+    v(
+        "domicilio-parecido",
+        False,
+        docs=_docs(id_card="doc-v17-id-address-similar"),
+    )
+    v("moneda-usd", False, docs=_docs(payslip="doc-v14-payslip-usd"))
+    v(
+        "periodo-desconocido",
+        False,
+        docs=_docs(payslip="doc-v16-payslip-unknown-period"),
+    )
+    v(
+        "quincenal-bajo",
+        False,
+        docs=_docs(payslip="doc-v18-payslip-biweekly-low"),
+    )
     # Tipo de documento declarado equivocado, y expediente incompleto
     wrong = _docs()
     wrong[0] = DocRef(doc_id="doc-good-payslip", doc_type="id_card")
@@ -246,6 +268,12 @@ def build_eval_set() -> list[EvalCase]:
                 documents=tuple(_docs()[:2]),
             ),
         ],
+    )
+    # Controles positivos: lo correcto no debe rechazarse de mas
+    v(
+        "quincenal-equivalente",
+        True,
+        docs=_docs(payslip="doc-v15-payslip-biweekly"),
     )
     # Control positivo: exactamente 10 % menos si se acepta
     v("ingreso-10-exacto", True, docs=_docs(payslip="doc-v12-payslip-10p0"))

@@ -30,6 +30,8 @@ BASE_DATA: dict[str, Any] = {
     "requested_amount": "80000",
     "employment_type": "salaried",
     "phone_last4": "1234",
+    "address_street": "Calle Reforma 10",
+    "address_postal_code": "06600",
 }
 GOOD_DOCS = {
     "payslip": "doc-good-payslip",

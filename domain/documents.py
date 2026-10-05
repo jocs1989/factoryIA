@@ -32,6 +32,9 @@ class DocumentPolicy(BaseModel):
     max_payment_to_income: Decimal
     min_field_confidence: Decimal
     name_similarity_min: Decimal
+    address_similarity_min: Decimal = Decimal("0.80")
+    expected_currency: str = "MXN"
+    period_factors: dict[str, Decimal] = {"monthly": Decimal(1)}
     net_tolerance: Decimal
     validity_days: dict[str, int]
 
@@ -121,6 +124,43 @@ def match_names(
     if Decimal(str(ratio)) >= similar_min:
         return NameMatch.SIMILAR
     return NameMatch.MISMATCH
+
+
+def _street(text: str) -> str:
+    plain = unicodedata.normalize("NFKD", text.lower())
+    plain = "".join(c for c in plain if not unicodedata.combining(c))
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", plain).split())
+
+
+def match_address(
+    street_a: str,
+    postal_a: str,
+    street_b: str,
+    postal_b: str,
+    similar_min: Decimal = Decimal("0.80"),
+) -> NameMatch:
+    """Domicilio: codigo postal exacto y calle igual o parecida."""
+    if postal_a.strip() != postal_b.strip():
+        return NameMatch.MISMATCH
+    a, b = _street(street_a), _street(street_b)
+    if not a or not b:
+        return NameMatch.MISMATCH
+    if a == b:
+        return NameMatch.MATCH
+    ratio = SequenceMatcher(None, a, b).ratio()
+    if Decimal(str(ratio)) >= similar_min:
+        return NameMatch.SIMILAR
+    return NameMatch.MISMATCH
+
+
+def to_monthly(
+    amount: Decimal, period: str, policy: DocumentPolicy
+) -> Decimal | None:
+    """Lleva un ingreso a mensual; None si el periodo no se reconoce."""
+    factor = policy.period_factors.get(period.strip().lower())
+    if factor is None:
+        return None
+    return (amount * factor).quantize(Decimal("0.01"))
 
 
 _CURP = re.compile(

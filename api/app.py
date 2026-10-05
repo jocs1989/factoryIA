@@ -46,6 +46,8 @@ class CaseCreate(BaseModel):
     declared_income: str
     requested_amount: str
     employment_type: str = "salaried"
+    address_street: str
+    address_postal_code: str = Field(pattern=r"^\d{5}$")
     phone_last4: str = Field(pattern=r"^\d{4}$")
 
 

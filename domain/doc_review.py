@@ -20,9 +20,11 @@ from domain.documents import (
     extraction_trusted,
     id_not_expired,
     is_vigent,
+    match_address,
     match_names,
     net_matches,
     payment_capacity_ok,
+    to_monthly,
     valid_curp,
     valid_rfc,
 )
@@ -49,9 +51,17 @@ CRITICAL_FIELDS: dict[str, tuple[str, ...]] = {
         "deductions",
         "net_income",
         "issue_date",
+        "currency",
+        "pay_period",
     ),
     "proof_of_address": ("full_name", "street", "postal_code", "issue_date"),
-    "id_card": ("full_name", "curp", "expiry_date"),
+    "id_card": (
+        "full_name",
+        "curp",
+        "expiry_date",
+        "street",
+        "postal_code",
+    ),
     "vehicle_title": ("full_name", "plates"),
     "bank_statement": (
         "full_name",
@@ -82,6 +92,10 @@ INCOME_IDENTITY = frozenset(
         "IDENTITY_MISMATCH",
         "NAME_SIMILAR",
         "FOREIGN_DOCUMENT",
+        "ADDRESS_MISMATCH",
+        "ADDRESS_SIMILAR",
+        "CURRENCY_MISMATCH",
+        "UNSUPPORTED_PERIOD",
     }
 )
 OWNERSHIP = frozenset({"VEHICLE_TITLE_MISMATCH"})
@@ -138,6 +152,8 @@ class ReviewInput(BaseModel):
     model_config = ConfigDict(frozen=True)
 
     customer_name: str
+    address_street: str
+    address_postal_code: str
     declared_income: Decimal
     employment_type: str
     documents: dict[str, DocFacts]
@@ -286,6 +302,40 @@ def review_documents(
                     "la identificacion esta vencida",
                 )
 
+        currency = doc.fields.get("currency")
+        if currency is not None and (
+            currency.value.strip().upper() != policy.expected_currency
+        ):
+            add(
+                "CURRENCY_MISMATCH",
+                Severity.CORRECTION,
+                doc_type,
+                f"la moneda del documento no es {policy.expected_currency}",
+            )
+
+        if "street" in doc.fields and "postal_code" in doc.fields:
+            addr = match_address(
+                doc.fields["street"].value,
+                doc.fields["postal_code"].value,
+                inp.address_street,
+                inp.address_postal_code,
+                policy.address_similarity_min,
+            )
+            if addr is NameMatch.SIMILAR:
+                add(
+                    "ADDRESS_SIMILAR",
+                    Severity.CORRECTION,
+                    doc_type,
+                    "el domicilio no coincide exactamente con el declarado",
+                )
+            elif addr is NameMatch.MISMATCH:
+                add(
+                    "ADDRESS_MISMATCH",
+                    Severity.CORRECTION,
+                    doc_type,
+                    "el domicilio no coincide con el declarado",
+                )
+
         match = match_names(
             doc.fields["full_name"].value,
             inp.customer_name,
@@ -339,7 +389,19 @@ def review_documents(
     verified: Decimal | None = None
     income_doc = inp.documents.get(INCOME_DOC[inp.employment_type])
     if income_doc is not None:
-        verified = _decimal(income_doc, INCOME_FIELD[income_doc.declared_type])
+        raw = _decimal(income_doc, INCOME_FIELD[income_doc.declared_type])
+        period = income_doc.fields.get("pay_period")
+        if raw is not None and period is not None:
+            verified = to_monthly(raw, period.value, policy)
+            if verified is None:
+                add(
+                    "UNSUPPORTED_PERIOD",
+                    Severity.CORRECTION,
+                    income_doc.declared_type,
+                    f"periodo de pago no reconocido: {period.value}",
+                )
+        else:
+            verified = raw  # estados de cuenta: ya es un promedio mensual
         if verified is not None:
             check = check_income(inp.declared_income, verified, policy)
             if check.result is IncomeResult.CORRECTION:
