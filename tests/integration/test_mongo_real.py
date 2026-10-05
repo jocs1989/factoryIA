@@ -70,3 +70,92 @@ def test_idempotencia_gana_el_primero(db: Any) -> None:
     store.put("k", {"a": 1})
     store.put("k", {"a": 2})
     assert store.get("k") == {"a": 1}
+
+
+@pytest.mark.parametrize("prefix", ["01", "04", "05", "09", "10", "11"])
+def test_escenarios_de_punta_a_punta_con_mongo_real(
+    prefix: str, db: Any
+) -> None:
+    """El runtime completo (casos, bandeja, idempotencia) sobre Mongo."""
+    from agent.scenarios import load_scenarios, run_scenario
+    from config.settings import load_settings
+
+    sc = next(s for s in load_scenarios() if s.id.startswith(prefix))
+    settings = load_settings().model_copy(
+        update={
+            "repo_backend": "mongo",
+            "mongo_uri": URI,
+            "mongo_db": db.name,
+        }
+    )
+    result = run_scenario(sc, "rules", settings=settings)
+    assert result.passed, result.problems
+    # El caso quedo realmente en el servidor, no en memoria.
+    stored = db.cases.find_one({"_id": sc.case["case_id"]})
+    assert stored is not None
+    assert stored["stage"] == sc.expected.stage
+    assert db.idempotency.count_documents({}) > 0
+
+
+def test_asesor_resuelve_y_el_agente_reanuda_con_mongo_real(db: Any) -> None:
+    from agent.runtime import build_runtime
+    from agent.types import CustomerEvent, DocRef
+    from config.settings import load_settings
+
+    settings = load_settings().model_copy(
+        update={
+            "repo_backend": "mongo",
+            "mongo_uri": URI,
+            "mongo_db": db.name,
+        }
+    )
+    rt = build_runtime(settings)
+    rt.create_case(
+        {
+            "case_id": "m1",
+            "customer_id": "cust-s01",
+            "vehicle_id": "veh-s01",
+            "customer_name": "Juan Pérez López",
+            "declared_income": "20000.00",
+            "requested_amount": "50000",
+            "employment_type": "salaried",
+            "address_street": "Calle Reforma 10",
+            "address_postal_code": "06600",
+            "phone_last4": "1234",
+        }
+    )
+    s = rt.verify("m1", "1234")
+    good = {
+        "payslip": "doc-s05-payslip",
+        "proof_of_address": "doc-good-address",
+        "id_card": "doc-good-id",
+        "vehicle_title": "doc-good-title",
+    }
+    for text in ("Hola", "Sí, autorizo", "24 meses"):
+        rt.runner.turn(s, CustomerEvent(text=text))
+    r = rt.runner.turn(
+        s,
+        CustomerEvent(
+            text="Adjunto",
+            documents=tuple(
+                DocRef(doc_id=i, doc_type=t) for t, i in good.items()
+            ),
+        ),
+    )
+    assert r.stage == "ESCALATED"
+    ticket = rt.deps.inbox.list_open()[0]
+    res = rt.executor.call(
+        rt.principals.get("advisor"),
+        s,
+        "resolve_escalation",
+        {
+            "case_id": "m1",
+            "ticket_id": ticket.ticket_id,
+            "decision": "resume",
+            "justification": "Validado por telefono",
+            "override_codes": ["INCOME_MISMATCH"],
+        },
+    )
+    assert res.ok, res
+    assert rt.runner.resume_after_advisor(s).stage == "READY_FOR_LENDER"
+    assert db.tickets.count_documents({"status": "OPEN"}) == 0
