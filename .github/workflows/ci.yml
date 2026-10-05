@@ -1,0 +1,72 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: lint, tipos, mocks, tests y evaluación
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --frozen --group dev
+      # Sin red ni credenciales: todo corre en modo mock.
+      - run: make lint
+      - run: make types
+      - run: make mocks-validate
+      - run: make test
+      # Falla si aparece un falso OK, un falso rechazo o un bypass del gate.
+      - run: make eval
+
+  integration:
+    name: integración con MongoDB real
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: uv python install 3.12
+      - run: uv sync --frozen --group dev
+      - run: make integration
+        env:
+          MONGO_URI: mongodb://localhost:27017
+
+  image:
+    name: construye la imagen
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t auto-equity-agent .
+
+  dependencias:
+    name: auditoría de dependencias
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Informativa: una CVE nueva no debe bloquear un cambio ajeno.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv export --frozen --no-dev --no-hashes --format requirements-txt -o requirements.txt
+      - run: uvx pip-audit -r requirements.txt
