@@ -1,0 +1,66 @@
+{
+  "id": "04-sin-segunda-llave",
+  "title": "Sin segunda llave: la cotización entra al plan",
+  "case": {
+    "case_id": "s04",
+    "customer_id": "cust-s04",
+    "vehicle_id": "veh-s04",
+    "customer_name": "Juan Pérez López",
+    "declared_income": "20000.00",
+    "requested_amount": "80000",
+    "employment_type": "salaried",
+    "phone_last4": "1234"
+  },
+  "turns": [
+    {
+      "text": "Hola, quiero un crédito con garantía de mi auto"
+    },
+    {
+      "text": "No tengo la segunda llave"
+    },
+    {
+      "text": "Sí, autorizo la consulta al Buró de Crédito"
+    },
+    {
+      "text": "Quiero el plazo de 24 meses"
+    },
+    {
+      "text": "Adjunto mis documentos",
+      "documents": [
+        {
+          "doc_id": "doc-good-payslip",
+          "doc_type": "payslip"
+        },
+        {
+          "doc_id": "doc-good-address",
+          "doc_type": "proof_of_address"
+        },
+        {
+          "doc_id": "doc-good-id",
+          "doc_type": "id_card"
+        },
+        {
+          "doc_id": "doc-good-title",
+          "doc_type": "vehicle_title"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "stage": "READY_FOR_LENDER",
+    "reason_codes": [],
+    "adversarial": false,
+    "data": {
+      "second_key_cost": "4200.00"
+    },
+    "checkpoints": [
+      {
+        "after_turn": 1,
+        "stage": "ELIGIBILITY"
+      }
+    ]
+  },
+  "llm": {
+    "script": "04-sin-segunda-llave.json"
+  }
+}

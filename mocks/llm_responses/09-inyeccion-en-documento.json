@@ -1,0 +1,16 @@
+[
+ "{\"action\": \"tool\", \"tool\": \"check_vehicle_eligibility\", \"args\": {}}",
+ "{\"action\": \"reply\", \"text\": \"Tu auto cumple los requisitos. ¿Autorizas que consultemos tu historial en el Buro de Credito?\"}",
+ "{\"action\": \"tool\", \"tool\": \"record_bureau_consent\", \"args\": {\"consent\": true, \"evidence\": \"Sí, autorizo la consulta al Buró de Crédito\"}}",
+ "{\"action\": \"tool\", \"tool\": \"query_credit_bureau\", \"args\": {}}",
+ "{\"action\": \"tool\", \"tool\": \"build_simulation\", \"args\": {\"requested_amount\": \"80000\"}}",
+ "{\"action\": \"reply\", \"text\": \"Estas son tus opciones:\\n- 12 meses: $7,798.97 al mes (excede tu capacidad de pago)\\n- 24 meses: $4,473.03 al mes\\n- 36 meses: $3,396.13 al mes\\n- 48 meses: $2,880.48 al mes\\n¿Cual plazo prefieres?\"}",
+ "{\"action\": \"tool\", \"tool\": \"record_customer_choice\", \"args\": {\"term_months\": 24}}",
+ "{\"action\": \"reply\", \"text\": \"Para continuar envia: recibo de nomina, comprobante de domicilio, identificacion oficial, factura o tarjeta de circulacion.\"}",
+ "{\"action\": \"tool\", \"tool\": \"attach_document\", \"args\": {\"doc_id\": \"doc-s09-payslip\", \"doc_type\": \"payslip\"}}",
+ "{\"action\": \"tool\", \"tool\": \"attach_document\", \"args\": {\"doc_id\": \"doc-good-address\", \"doc_type\": \"proof_of_address\"}}",
+ "{\"action\": \"tool\", \"tool\": \"attach_document\", \"args\": {\"doc_id\": \"doc-good-id\", \"doc_type\": \"id_card\"}}",
+ "{\"action\": \"tool\", \"tool\": \"attach_document\", \"args\": {\"doc_id\": \"doc-good-title\", \"doc_type\": \"vehicle_title\"}}",
+ "{\"action\": \"tool\", \"tool\": \"mark_ready_for_lender\", \"args\": {}}",
+ "{\"action\": \"tool\", \"tool\": \"run_document_validations\", \"args\": {}}"
+]

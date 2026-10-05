@@ -1,0 +1,19 @@
+[
+ "{\"action\": \"tool\", \"tool\": \"check_vehicle_eligibility\", \"args\": {}}",
+ "{\"action\": \"reply\", \"text\": \"Para continuar necesito saber si cuentas con la segunda llave de tu auto. ¿La tienes?\"}",
+ "{\"action\": \"tool\", \"tool\": \"check_vehicle_eligibility\", \"args\": {\"declared_second_key\": false}}",
+ "{\"action\": \"tool\", \"tool\": \"quote_second_key\", \"args\": {}}",
+ "{\"action\": \"reply\", \"text\": \"Tu auto cumple los requisitos. Cotizamos tu segunda llave en $4,200.00; se sumara al monto financiado. ¿Autorizas que consultemos tu historial en el Buro de Credito?\"}",
+ "{\"action\": \"tool\", \"tool\": \"record_bureau_consent\", \"args\": {\"consent\": true, \"evidence\": \"Sí, autorizo la consulta al Buró de Crédito\"}}",
+ "{\"action\": \"tool\", \"tool\": \"query_credit_bureau\", \"args\": {}}",
+ "{\"action\": \"tool\", \"tool\": \"build_simulation\", \"args\": {\"requested_amount\": \"80000\"}}",
+ "{\"action\": \"reply\", \"text\": \"Estas son tus opciones:\\n- 12 meses: $8,208.42 al mes (excede tu capacidad de pago)\\n- 24 meses: $4,707.86 al mes\\n- 36 meses: $3,574.42 al mes\\n- 48 meses: $3,031.70 al mes\\nIncluye $4,200.00 de segunda llave.\\n¿Cual plazo prefieres?\"}",
+ "{\"action\": \"tool\", \"tool\": \"record_customer_choice\", \"args\": {\"term_months\": 24}}",
+ "{\"action\": \"reply\", \"text\": \"Para continuar envia: recibo de nomina, comprobante de domicilio, identificacion oficial, factura o tarjeta de circulacion.\"}",
+ "{\"action\": \"tool\", \"tool\": \"attach_document\", \"args\": {\"doc_id\": \"doc-good-payslip\", \"doc_type\": \"payslip\"}}",
+ "{\"action\": \"tool\", \"tool\": \"attach_document\", \"args\": {\"doc_id\": \"doc-good-address\", \"doc_type\": \"proof_of_address\"}}",
+ "{\"action\": \"tool\", \"tool\": \"attach_document\", \"args\": {\"doc_id\": \"doc-good-id\", \"doc_type\": \"id_card\"}}",
+ "{\"action\": \"tool\", \"tool\": \"attach_document\", \"args\": {\"doc_id\": \"doc-good-title\", \"doc_type\": \"vehicle_title\"}}",
+ "{\"action\": \"tool\", \"tool\": \"run_document_validations\", \"args\": {}}",
+ "{\"action\": \"tool\", \"tool\": \"mark_ready_for_lender\", \"args\": {}}"
+]

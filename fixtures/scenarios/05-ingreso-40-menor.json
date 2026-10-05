@@ -1,0 +1,58 @@
+{
+  "id": "05-ingreso-40-menor",
+  "title": "Comprobante de ingresos 40 % menor al declarado",
+  "case": {
+    "case_id": "s05",
+    "customer_id": "cust-s05",
+    "vehicle_id": "veh-s05",
+    "customer_name": "Juan Pérez López",
+    "declared_income": "20000.00",
+    "requested_amount": "80000",
+    "employment_type": "salaried",
+    "phone_last4": "1234"
+  },
+  "turns": [
+    {
+      "text": "Hola, quiero un crédito con garantía de mi auto"
+    },
+    {
+      "text": "Sí, autorizo la consulta al Buró de Crédito"
+    },
+    {
+      "text": "Quiero el plazo de 24 meses"
+    },
+    {
+      "text": "Adjunto mis documentos",
+      "documents": [
+        {
+          "doc_id": "doc-s05-payslip",
+          "doc_type": "payslip"
+        },
+        {
+          "doc_id": "doc-good-address",
+          "doc_type": "proof_of_address"
+        },
+        {
+          "doc_id": "doc-good-id",
+          "doc_type": "id_card"
+        },
+        {
+          "doc_id": "doc-good-title",
+          "doc_type": "vehicle_title"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "stage": "ESCALATED",
+    "reason_codes": [
+      "INCOME_MISMATCH"
+    ],
+    "adversarial": true,
+    "data": {},
+    "checkpoints": []
+  },
+  "llm": {
+    "script": "05-ingreso-40-menor.json"
+  }
+}

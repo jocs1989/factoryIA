@@ -1,0 +1,56 @@
+{
+  "id": "11-ingreso-invalida-cuota",
+  "title": "El ingreso verificado hace inviable la cuota: vuelve a simulación",
+  "case": {
+    "case_id": "s11",
+    "customer_id": "cust-s11",
+    "vehicle_id": "veh-s11",
+    "customer_name": "Juan Pérez López",
+    "declared_income": "20000.00",
+    "requested_amount": "120000",
+    "employment_type": "salaried",
+    "phone_last4": "1234"
+  },
+  "turns": [
+    {
+      "text": "Hola, quiero un crédito con garantía de mi auto"
+    },
+    {
+      "text": "Sí, autorizo la consulta al Buró de Crédito"
+    },
+    {
+      "text": "Quiero el plazo de 24 meses"
+    },
+    {
+      "text": "Adjunto mis documentos",
+      "documents": [
+        {
+          "doc_id": "doc-s11-payslip",
+          "doc_type": "payslip"
+        },
+        {
+          "doc_id": "doc-good-address",
+          "doc_type": "proof_of_address"
+        },
+        {
+          "doc_id": "doc-good-id",
+          "doc_type": "id_card"
+        },
+        {
+          "doc_id": "doc-good-title",
+          "doc_type": "vehicle_title"
+        }
+      ]
+    }
+  ],
+  "expected": {
+    "stage": "SIMULATION",
+    "reason_codes": [],
+    "adversarial": false,
+    "data": {},
+    "checkpoints": []
+  },
+  "llm": {
+    "script": "11-ingreso-invalida-cuota.json"
+  }
+}

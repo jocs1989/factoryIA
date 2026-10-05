@@ -1,0 +1,31 @@
+{
+  "id": "03-auto-con-gravamen",
+  "title": "Auto con gravamen",
+  "case": {
+    "case_id": "s03",
+    "customer_id": "cust-s03",
+    "vehicle_id": "veh-s03",
+    "customer_name": "Juan Pérez López",
+    "declared_income": "20000.00",
+    "requested_amount": "80000",
+    "employment_type": "salaried",
+    "phone_last4": "1234"
+  },
+  "turns": [
+    {
+      "text": "Hola, quiero un crédito con garantía de mi auto"
+    }
+  ],
+  "expected": {
+    "stage": "REJECTED",
+    "reason_codes": [
+      "VEHICLE_ENCUMBERED"
+    ],
+    "adversarial": false,
+    "data": {},
+    "checkpoints": []
+  },
+  "llm": {
+    "script": "03-auto-con-gravamen.json"
+  }
+}
