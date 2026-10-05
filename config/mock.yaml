@@ -1,0 +1,9 @@
+# Sin red ni secretos. Gobernanza activa; solo se relaja la identidad.
+allow_anonymous_principal: true
+policy: rules
+llm_backend: scripted
+repo_backend: memory
+audit_backend: memory
+checkpointer: memory
+fixed_today: "2026-10-05"   # los fixtures de documentos se fechan contra este dia
+log_format: console

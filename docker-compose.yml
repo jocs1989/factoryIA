@@ -1,0 +1,24 @@
+# api + mocks de proveedores + MongoDB. Las claves entran por entorno:
+#   AGENT_CLIENT_API_KEY=... ADVISOR_API_KEY=... docker compose up --build
+services:
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]
+  mocks:
+    build: .
+    command: ["uv", "run", "uvicorn", "mocks.server:app", "--host", "0.0.0.0", "--port", "9000"]
+    ports: ["9000:9000"]
+  api:
+    build: .
+    environment:
+      AGENT_ENV: dev
+      MONGO_URI: mongodb://mongo:27017
+      PROVIDERS_BASE_URL: http://mocks:9000
+      AGENT_CLIENT_API_KEY: ${AGENT_CLIENT_API_KEY:?define AGENT_CLIENT_API_KEY}
+      ADVISOR_API_KEY: ${ADVISOR_API_KEY:?define ADVISOR_API_KEY}
+      AUDIT_PATH: /data/audit.jsonl
+    volumes: ["audit:/data"]
+    ports: ["8000:8000"]
+    depends_on: [mongo, mocks]
+volumes:
+  audit:

@@ -1,0 +1,8 @@
+allow_anonymous_principal: false
+policy: llm
+llm_backend: scripted
+repo_backend: mongo
+audit_backend: jsonl
+checkpointer: memory
+providers_base_url: http://mocks:9000
+log_format: console

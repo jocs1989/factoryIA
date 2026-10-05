@@ -1,0 +1,8 @@
+allow_anonymous_principal: false
+policy: llm
+llm_backend: gemini,openai   # cadena con respaldo
+repo_backend: mongo
+audit_backend: jsonl
+checkpointer: mongo
+log_format: json
+# providers_base_url, mongo_uri y claves: solo por variables de entorno
