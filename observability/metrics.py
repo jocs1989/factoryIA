@@ -6,6 +6,8 @@ import math
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from dataclasses import dataclass, field
+from decimal import Decimal
+from typing import Any
 
 from ports import AuditEvent
 
@@ -47,6 +49,13 @@ class ToolStats:
 
 
 @dataclass
+class ModelUsage:
+    calls: int = 0
+    tokens_in: int = 0
+    tokens_out: int = 0
+
+
+@dataclass
 class Metrics:
     cases: int
     rejections_by_reason: dict[str, int]
@@ -59,10 +68,15 @@ class Metrics:
     tools: dict[str, ToolStats]
     llm: dict[str, int]
     llm_p95_ms: int
+    llm_models: dict[str, ModelUsage]
+    llm_cost: Decimal | None  # None si falta alguna tarifa
+    llm_currency: str
     invariant_violations: int
 
 
-def compute_metrics(events: Iterable[AuditEvent]) -> Metrics:
+def compute_metrics(
+    events: Iterable[AuditEvent], pricing: dict[str, Any] | None = None
+) -> Metrics:
     evs = list(events)
     cases = {e.case_id for e in evs}
     rejections: Counter[str] = Counter()
@@ -73,6 +87,7 @@ def compute_metrics(events: Iterable[AuditEvent]) -> Metrics:
     ready: set[str] = set()
     llm: Counter[str] = Counter()
     llm_lat: list[int] = []
+    models: dict[str, ModelUsage] = defaultdict(ModelUsage)
     tools: dict[str, ToolStats] = defaultdict(ToolStats)
     violations = 0
     seen_mismatch: set[tuple[str, str]] = set()
@@ -81,6 +96,11 @@ def compute_metrics(events: Iterable[AuditEvent]) -> Metrics:
         if e.type == "llm":
             llm[e.outcome] += 1
             llm_lat.append(e.latency_ms)
+            if e.model:
+                u = models[e.model]
+                u.calls += 1
+                u.tokens_in += e.tokens_in
+                u.tokens_out += e.tokens_out
             continue
         if e.type == "invariant":
             violations += 1
@@ -115,6 +135,7 @@ def compute_metrics(events: Iterable[AuditEvent]) -> Metrics:
         if e.stage_after == "READY_FOR_LENDER":
             ready.add(e.case_id)
     total = len(cases)
+    cost, currency = _cost(models, pricing)
     return Metrics(
         cases=total,
         rejections_by_reason=dict(rejections),
@@ -127,8 +148,31 @@ def compute_metrics(events: Iterable[AuditEvent]) -> Metrics:
         tools=dict(tools),
         llm=dict(llm),
         llm_p95_ms=_p95(llm_lat),
+        llm_models=dict(models),
+        llm_cost=cost,
+        llm_currency=currency,
         invariant_violations=violations,
     )
+
+
+def _cost(
+    models: dict[str, ModelUsage], pricing: dict[str, Any] | None
+) -> tuple[Decimal | None, str]:
+    """Costo estimado; None si algun modelo usado no tiene tarifa."""
+    prices = (pricing or {}).get("models") or {}
+    currency = str((pricing or {}).get("currency", "USD"))
+    if not models:
+        return Decimal(0), currency
+    total = Decimal(0)
+    for name, use in models.items():
+        price = prices.get(name)
+        if not price:
+            return None, currency
+        total += (
+            Decimal(str(price["input_per_mtok"])) * use.tokens_in
+            + Decimal(str(price["output_per_mtok"])) * use.tokens_out
+        ) / Decimal(1_000_000)
+    return total, currency
 
 
 def format_report(m: Metrics) -> str:
@@ -162,6 +206,18 @@ def format_report(m: Metrics) -> str:
         )
         + f"   p95={m.llm_p95_ms} ms"
     )
+    for name, use in sorted(m.llm_models.items()):
+        lines.append(
+            f"  modelo {name}: {use.calls} llamadas, "
+            f"{use.tokens_in} tokens de entrada, {use.tokens_out} de salida"
+        )
+    if m.llm_models:
+        cost = (
+            f"{m.llm_cost:.4f} {m.llm_currency}"
+            if m.llm_cost is not None
+            else "n/d (falta la tarifa en config/llm_pricing.yaml)"
+        )
+        lines.append(f"  costo estimado del LLM: {cost}")
     lines.append(f"Violaciones de invariantes: {m.invariant_violations}")
     return "\n".join(lines)
 

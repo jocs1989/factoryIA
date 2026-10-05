@@ -219,6 +219,9 @@ class AuditEvent(BaseModel):
     reason_codes: tuple[str, ...] = ()
     latency_ms: int = 0
     stage_after: str | None = None
+    model: str | None = None  # solo eventos de LLM
+    tokens_in: int = 0
+    tokens_out: int = 0
     ts: datetime
 
 

@@ -1,0 +1,10 @@
+# Tarifas por millon de tokens para estimar el costo en `make report`.
+# NO se incluyen valores: los precios cambian y no se inventan aqui. Sin
+# tarifa para un modelo, el reporte muestra sus tokens y "costo n/d".
+# Ejemplo (completar con la tarifa vigente del proveedor):
+#
+# currency: USD
+# models:
+#   gemini-2.0-flash: {input_per_mtok: "0.00", output_per_mtok: "0.00"}
+currency: USD
+models: {}

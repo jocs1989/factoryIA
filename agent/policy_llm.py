@@ -16,7 +16,15 @@ from pathlib import Path
 from typing import Any
 
 from agent.types import Action, Policy, Reply, StageView, ToolCall
-from ports import AuditEvent, AuditPort, LLMError, LLMPort, LLMRequest, Message
+from ports import (
+    AuditEvent,
+    AuditPort,
+    LLMError,
+    LLMPort,
+    LLMRequest,
+    LLMResponse,
+    Message,
+)
 
 PROMPTS = Path(__file__).parent / "prompts"
 _FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.IGNORECASE)
@@ -139,10 +147,16 @@ class LLMPolicy(Policy):
             self.degraded.add(view.case_id)
             return self._fallback.next_action(view)
         self._failures[view.case_id] = 0
-        self._note(view, "ok", _ms(t0))
+        self._note(view, "ok", _ms(t0), resp)
         return action
 
-    def _note(self, view: StageView, outcome: str, ms: int) -> None:
+    def _note(
+        self,
+        view: StageView,
+        outcome: str,
+        ms: int,
+        resp: LLMResponse | None = None,
+    ) -> None:
         if self._audit is None:
             return
         self._audit.record(
@@ -157,6 +171,9 @@ class LLMPolicy(Policy):
                 if outcome == "ok"
                 else ("LLM_FALLBACK_TO_RULES",),
                 latency_ms=ms,
+                model=resp.model if resp else None,
+                tokens_in=resp.usage.get("input_tokens", 0) if resp else 0,
+                tokens_out=resp.usage.get("output_tokens", 0) if resp else 0,
                 ts=self._clock(),
             )
         )

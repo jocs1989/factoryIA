@@ -86,3 +86,82 @@ def test_validador_de_mocks_como_comando(
     (tmp_path / "mal.json").write_text('{"id": "x"}')
     assert validate_main(["x", str(tmp_path)]) == 1
     assert "ERROR" in capsys.readouterr().out
+
+
+def _llm_event(model: str, tin: int, tout: int, n: int = 0) -> AuditEvent:
+    from datetime import UTC, datetime
+
+    return AuditEvent(
+        run_id="r",
+        case_id="c1",
+        principal="policy-llm",
+        type="llm",
+        name="gemini",
+        outcome="ok",
+        model=model,
+        tokens_in=tin,
+        tokens_out=tout,
+        latency_ms=100 + n,
+        ts=datetime(2026, 10, 5, 12, 0, n, tzinfo=UTC),
+    )
+
+
+def test_tokens_y_costo_con_tarifa_configurada() -> None:
+    from decimal import Decimal
+
+    pricing = {
+        "currency": "USD",
+        "models": {"m1": {"input_per_mtok": "2", "output_per_mtok": "10"}},
+    }
+    m = compute_metrics(
+        [
+            _llm_event("m1", 1_000_000, 500_000),
+            _llm_event("m1", 0, 500_000, 1),
+        ],
+        pricing,
+    )
+    assert m.llm_models["m1"].calls == 2
+    assert m.llm_models["m1"].tokens_in == 1_000_000
+    assert m.llm_cost == Decimal("12")  # 1M*2 + 1M*10, por millon
+    assert "costo estimado del LLM: 12.0000 USD" in format_report(m)
+
+
+def test_sin_tarifa_no_se_inventa_el_costo() -> None:
+    m = compute_metrics([_llm_event("m1", 10, 5)], {"models": {}})
+    assert m.llm_cost is None
+    assert "n/d" in format_report(m)
+
+
+def test_la_politica_llm_registra_tokens_y_modelo() -> None:
+    from adapters.audit_memory import MemoryAudit
+    from agent.policy_llm import LLMPolicy
+    from agent.policy_rules import RuleBasedPolicy
+    from agent.types import CustomerEvent, StageView
+    from domain.case import Stage
+    from ports import LLMResponse
+
+    class Fake:
+        name = "fake"
+
+        def complete(self, request):  # type: ignore[no-untyped-def]
+            return LLMResponse(
+                text='{"action": "reply", "text": "hola"}',
+                provider="fake",
+                model="fake-1",
+                usage={"input_tokens": 120, "output_tokens": 30},
+            )
+
+    audit = MemoryAudit()
+    view = StageView(
+        case_id="c1",
+        run_id="r",
+        stage=Stage.ELIGIBILITY,
+        case={},
+        event=CustomerEvent(text="hola"),
+        pending_docs=(),
+        last=None,
+        tools=(),
+    )
+    LLMPolicy(Fake(), RuleBasedPolicy(), audit).next_action(view)
+    ev = audit.list_events("c1")[0]
+    assert (ev.model, ev.tokens_in, ev.tokens_out) == ("fake-1", 120, 30)
