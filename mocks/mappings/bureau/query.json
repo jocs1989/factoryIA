@@ -1,0 +1,414 @@
+[
+  {
+    "id": "autoequity.bureau.v1.query.cust_s01",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s01"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s02",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s02"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s03",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s03"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s04",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s04"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s05",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s05"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s06",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s06"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s07",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s07"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s08",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s08"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s09",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s09"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s10",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s10"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s11",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s11"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_s12",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-s12"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 650,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_a",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-a"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 720,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_decline",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-decline"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 560,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_delinquent",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-delinquent"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 800,
+        "accounts_delinquent": 1,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_thin",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-thin"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": 720,
+        "accounts_delinquent": 0,
+        "history_months": 6
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_noscore",
+    "domain": "bureau",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-noscore"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "score": null,
+        "accounts_delinquent": 0,
+        "history_months": 48
+      }
+    }
+  },
+  {
+    "id": "autoequity.bureau.v1.query.cust_fail",
+    "domain": "bureau",
+    "priority": 1,
+    "request": {
+      "method": "POST",
+      "path": "/api/bureau/query",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.customer_id",
+          "equalTo": "cust-fail"
+        }
+      ]
+    },
+    "response": {
+      "status": 503,
+      "jsonBody": {
+        "error": "bureau_unavailable"
+      }
+    }
+  }
+]

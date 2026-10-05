@@ -1,0 +1,30 @@
+from __future__ import annotations
+
+import threading
+from pathlib import Path
+
+from ports import AuditEvent
+
+
+class JsonlAudit:
+    """Bitacora append-only: una linea JSON por evento."""
+
+    def __init__(self, path: Path) -> None:
+        self._path = path
+        self._lock = threading.Lock()
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+    def record(self, event: AuditEvent) -> None:
+        line = event.model_dump_json()
+        with self._lock, self._path.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+
+    def list_events(self, case_id: str) -> list[AuditEvent]:
+        if not self._path.exists():
+            return []
+        events = (
+            AuditEvent.model_validate_json(line)
+            for line in self._path.read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        )
+        return [e for e in events if e.case_id == case_id]

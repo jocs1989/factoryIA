@@ -1,0 +1,314 @@
+[
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s01",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s01"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s02",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s02"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": false,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s03",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s03"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 1,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s04",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s04"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": null,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s05",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s05"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s06",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s06"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s07",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s07"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s08",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s08"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s09",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s09"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s10",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s10"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s11",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s11"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_s12",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s12"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": true,
+        "appraised_value": "250000.00"
+      }
+    }
+  },
+  {
+    "id": "autoequity.vehicles.v1.get.veh_nokey",
+    "domain": "vehicles",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/vehicles/get",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-nokey"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "owner_matches": true,
+        "active_liens": 0,
+        "second_key": false,
+        "appraised_value": "250000.00"
+      }
+    }
+  }
+]

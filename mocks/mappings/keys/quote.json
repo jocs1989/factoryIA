@@ -1,0 +1,41 @@
+[
+  {
+    "id": "autoequity.keys.v1.quote.default",
+    "domain": "keys",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/keys/quote",
+      "bodyPatterns": []
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "amount": "3500.00",
+        "currency": "MXN"
+      }
+    }
+  },
+  {
+    "id": "autoequity.keys.v1.quote.veh_s04",
+    "domain": "keys",
+    "priority": 10,
+    "request": {
+      "method": "POST",
+      "path": "/api/keys/quote",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.vehicle_id",
+          "equalTo": "veh-s04"
+        }
+      ]
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "amount": "4200.00",
+        "currency": "MXN"
+      }
+    }
+  }
+]

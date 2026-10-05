@@ -1,0 +1,40 @@
+[
+  {
+    "id": "autoequity.channel.v1.send.default",
+    "domain": "channel",
+    "priority": 100,
+    "request": {
+      "method": "POST",
+      "path": "/api/channel/send",
+      "bodyPatterns": []
+    },
+    "response": {
+      "status": 200,
+      "jsonBody": {
+        "status": "queued",
+        "message_id": "msg-mock-0001"
+      }
+    }
+  },
+  {
+    "id": "autoequity.channel.v1.send.down",
+    "domain": "channel",
+    "priority": 1,
+    "request": {
+      "method": "POST",
+      "path": "/api/channel/send",
+      "bodyPatterns": [
+        {
+          "jsonPath": "$.case_id",
+          "equalTo": "case-channel-down"
+        }
+      ]
+    },
+    "response": {
+      "status": 503,
+      "jsonBody": {
+        "error": "channel_unavailable"
+      }
+    }
+  }
+]
