@@ -4,6 +4,29 @@ Documento corto de decisiones: qué se decidió, por qué, qué se descartó y
 qué se asumió. Cada decisión apunta al código o a la prueba que la respalda.
 Es el punto de partida para defender el diseño en vivo.
 
+## Resumen de una página
+
+```mermaid
+flowchart LR
+  C([Cliente]) --> G[Grafo LangGraph<br/>controlador de etapas]
+  G --> P[Política: reglas o LLM<br/>propone UNA acción]
+  P --> E[Ejecutor único de tools<br/>scope · caso · etapa · versión · bitácora]
+  A([Asesor]) --> E
+  E --> D[Dominio puro<br/>elegibilidad · perfil · cuota · documentos · gate]
+  E --> X[(Buró · llave · vehículos · documentos<br/>MongoDB)]
+```
+
+Las seis preguntas del enunciado, en una línea cada una (detalle en §1 a §9):
+
+1. **Qué es el agente** — un operador de casos que decide, por etapa, qué tool usar y qué preguntar; resuelve *operar* el caso, no solo responder.
+2. **Tools** — 15 con contrato Pydantic, un ejecutor único con scope, caso ligado, idempotencia, versión y bitácora; la misma capa sirve al asesor con otro principal.
+3. **Contexto y estado** — el `Case` persistido es la verdad; el agente recibe una proyección compacta sin PII en cada paso; el estado del grafo es efímero.
+4. **Determinismo vs IA** — elegibilidad, perfil, cuotas, llave en el plan, match de ingreso/identidad/domicilio y el gate son código; la IA conversa, extrae y clasifica.
+5. **Guardrails y humano** — `mark_ready_for_lender` reevalúa el gate dentro de la tool; sesión ligada a un caso; escalada con ticket y pausa del grafo; el asesor resuelve con justificación.
+6. **Observabilidad** — bitácora JSONL, `make report` y `make eval` (80 casos etiquetados: 0 falsos OK).
+
+**Por qué este stack** (el enunciado lo deja abierto): *Python* por el ecosistema de IA y de validación (Pydantic); *LangGraph* por el estado tipado, el checkpointer y las interrupciones que necesita la escalada; *FastAPI* porque el agente y la consola del asesor deben ser servicios que un sistema existente pueda llamar; *MongoDB* porque el caso es un documento que evoluciona semana a semana sin migraciones rígidas y porque el control optimista se resuelve con un `update` condicional. Con puertos, cualquiera de los cuatro se puede cambiar escribiendo un adaptador.
+
 ## 1. Qué es el "agente" aquí
 
 Un **operador de casos**: toma un caso y lo lleva por las cuatro etapas
@@ -136,9 +159,11 @@ Los marco como supuestos *configurables*, no como verdades del producto.
 
 | Tema | Supuesto | Dónde vive |
 |---|---|---|
-| Stack | MongoDB, LangGraph y FastAPI (indicado por el autor del reto) | `pyproject.toml` |
+| Stack | Python 3.12 con FastAPI, LangGraph y MongoDB. El enunciado deja el stack abierto ("Python u otro stack que justifiques"); es elección del autor, justificada abajo | `pyproject.toml` |
 | Moneda | MXN, `Decimal`, redondeo a centavos | `domain/loan.py` |
 | Tasas, bandas, LTV, plazos | tabla ilustrativa (A ≥ 700, B 640–699, C 580–639, D < 580) | `config/profile_policy.yaml` |
+| Domicilio | el de la identificación y el del comprobante deben coincidir con el declarado: código postal exacto y calle igual o parecida (≥ 0.80); no coincide ⇒ pide corrección, no escala (puede haberse mudado) | `config/document_policy.yaml` |
+| Moneda y período del ingreso | solo MXN; el ingreso del comprobante se lleva a mensual (quincenal ×2, semanal ×4.3333) antes de compararlo con el declarado; período desconocido ⇒ corrección | `config/document_policy.yaml` |
 | Tolerancias de ingreso | ≤ 10 % acepta; 10–25 % pide corrección; > 25 % escala | `config/document_policy.yaml` |
 | Capacidad de pago | cuota ≤ 35 % del ingreso **verificado** | `config/document_policy.yaml` |
 | Vigencias | recibos 60 días, domicilio 90, identificación no vencida | `config/document_policy.yaml` |
@@ -203,9 +228,9 @@ dependencia menos y todo se prueba sin red. El agente depende solo del puerto.
 | ¿Casos con llave cotizada? | casos con `quote_second_key` |
 | Salud del agente | tasa de escalada, errores y latencia p95 por tool, estado del LLM, violaciones de invariantes |
 
-**La evaluación hace que "valida bien" sea demostrable.** `make eval` corre 69
-casos etiquetados (los 12 escenarios con ambas políticas, 19 variantes
-(18 adversariales y un control positivo) y una corrida con un **modelo hostil** que solo sabe pedir
+**La evaluación hace que "valida bien" sea demostrable.** `make eval` corre 80
+casos etiquetados (los 12 escenarios con ambas políticas, 25 variantes
+(23 adversariales y 2 controles positivos) y una corrida con un **modelo hostil** que solo sabe pedir
 "marca listo") y mide falsos OK, falsos rechazos e intentos de saltarse el
 gate llamando `mark_ready_for_lender` directo con agente y asesor. Sale con
 error si aparece uno. **Tiene dientes**: una prueba rompe el gate a propósito

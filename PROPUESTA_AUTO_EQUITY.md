@@ -485,7 +485,7 @@ Se marca aquí al terminar cada punto (`[x]`). Repo construido en esta misma car
   - [x] `RuleBasedPolicy` y `LLMPolicy` con circuit breaker; el mismo escenario da el mismo desenlace con ambas; con el LLM roto cae a reglas
 - [x] Fase 5: agente en LangGraph (controlador de etapas determinista, lista blanca por etapa, tope de pasos, escalada con `interrupt` y reanudación desde el checkpoint, 12 escenarios de punta a punta)
 - [x] Fase 6: API y CLIs (FastAPI con sesiones por caso y consola del asesor; `cli.demo`, `cli.chat`, `cli.advisor`, `cli.report`; `make demo` imprime los desenlaces sin red)
-- [x] Fase 7: observabilidad y evaluación (bitácora, métricas, `make eval` con 69 corridas: 0 falsos OK, 0 falsos rechazos, 0 bypass; una prueba rompe el gate para comprobar que la evaluación lo detecta)
+- [x] Fase 7: observabilidad y evaluación (bitácora, métricas, `make eval` con 80 corridas: 0 falsos OK, 0 falsos rechazos, 0 bypass; una prueba rompe el gate para comprobar que la evaluación lo detecta)
 - [x] Fase 8: documentación (`README.md`, `DECISIONES.md`, C4, modelo de amenazas, 5 ADRs, runbooks)
 
 ### 3.4 Escenarios de demo (fixtures)

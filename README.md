@@ -37,13 +37,75 @@ make check                   # lint + tipos + mocks + tests + eval
 | Comando | Para qué |
 |---|---|
 | `make demo [ARGS=...]` | Corre los escenarios. `--timeline` muestra conversación y decisiones; `--policy llm` usa el LLM guionado. |
-| `make eval` | Evaluación offline etiquetada (69 corridas). Sale con error si hay un falso OK, un rechazo de más o un bypass del gate. |
+| `make eval` | Evaluación offline etiquetada (80 corridas). Sale con error si hay un falso OK, un rechazo de más o un bypass del gate. |
 | `make report` | Métricas del reto desde la bitácora (rechazos por motivo, mismatches, llaves cotizadas, escaladas, latencias). |
 | `make test` / `make lint` / `make types` | Pruebas con piso de cobertura, `ruff` y `mypy --strict`. |
 | `make run` | API en `http://localhost:8000` (modo `mock`). |
 | `make mocks-validate` / `make mocks-serve` | Valida el catálogo de mocks / los sirve por HTTP. |
 | `make integration` | Contra un MongoDB real (`MONGO_URI=...`). |
 | `uv run python -m cli.chat` | Chat interactivo con el agente (`--scenario 05` para ver uno simulado). |
+
+## Cumplimiento del enunciado
+
+Contra *Ejercicio técnico — Auto Equity Agéntica (Senior AI Engineer)*. `[x]`
+= lo cubre el proyecto (con dónde se ve); `[ ]` = no lo cubre o queda
+pendiente.
+
+### La misión: operar el tramo de punta a punta
+
+- [x] **Elegibilidad del auto**: a nombre del cliente, sin adeudos y segunda llave; cotiza la llave y la suma al plan si falta (`domain/eligibility.py`, escenarios 2, 3 y 4)
+- [x] **Perfila con el Buró** (mock) y obtiene perfil y condiciones (`domain/profile.py`, `config/profile_policy.yaml`)
+- [x] **Simula** montos, plazos, tasas y cuotas, con la llave cuando aplica, y **registra la elección** (`domain/loan.py`, `record_customer_choice`)
+- [x] **Solicita, lee y valida** datos y comprobantes personales y laborales (`attach_document`, `run_document_validations`)
+- [x] **Decide** si el expediente está OK para la financiera, o pide corrección, o escala a humano (`mark_ready_for_lender`)
+
+### A. Código del agente
+
+- [x] Se puede **clonar, instalar y correr** sin red ni credenciales (`uv sync`, `make demo`)
+- [x] **Orquestación agéntica** de las cuatro etapas (`agent/graph.py`, LangGraph)
+- [x] **Capa de tools con contrato claro**, la misma idea de acción que ejecutaría un humano en el backoffice: chequear elegibilidad, cotizar segunda llave, consultar Buró, actualizar caso, generar simulación, adjuntar y leer documento, correr validaciones, marcar listo, escalar (`tools/spec.py`, `tools/catalog.py`: 15 tools)
+- [x] **Mocks de Buró, cotización de llave, documentos y canal** (`mocks/`; el canal de interacción es la CLI de chat y la API)
+- [x] **Demo reproducible**: camino feliz (1), rechazo por elegibilidad (2 y 3), validación documental fallida (5 a 10) y sin segunda llave con cotización en el plan (4) — `make demo`
+- [x] **Tests de las reglas determinísticas** (`tests/domain`, 150 pruebas; en total 445 más la evaluación)
+
+**Reglas de elegibilidad (determinísticas)**
+
+- [x] Sin auto a nombre del cliente → no hay crédito (`VEHICLE_NOT_OWNED`)
+- [x] Con adeudos que impidan la garantía → no hay crédito (`VEHICLE_ENCUMBERED`)
+- [x] Sin segunda llave → continúa; cotiza y suma al plan de pagos
+
+**Validaciones en Datos y Comprobantes** (política documentada en `config/document_policy.yaml` y `DECISIONES.md` §6)
+
+- [x] El **comprobante de ingresos se adecua a lo declarado**: monto (tolerancia ≤ 10 % acepta, 10–25 % corrige, > 25 % escala), **moneda** (solo MXN) y **período** (se lleva a mensual), y consistencia aritmética bruto − deducciones = neto
+- [x] **Nombre y domicilio de la identificación coinciden con el perfil/caso** (nombre normalizado; domicilio con código postal exacto y calle similar)
+- [x] **Coherencia adicional** para "listo para financiera": documento legible (confianza cruzada con validadores), tipo de comprobante acorde a la situación laboral, fechas no vencidas, titularidad del vehículo vs. lo declarado, CURP y RFC válidos y coherentes entre documentos
+- [x] **Confianza baja o mismatch → no se marca OK; se pide corrección** (`NEEDS_CORRECTION`, `request_customer_correction`)
+- [x] **Escalación a humano**: cómo se invoca (`escalate_to_human`, o sola ante inconsistencias graves) y cómo la ve y actúa un asesor (`cli.advisor`, `/advisor/*`; reanudar con justificación, rechazar o declinar)
+- [x] **Qué se valida en código y qué se deja al modelo**, y cómo se evita aprobar un expediente inconsistente (`DECISIONES.md` §4, §5 y ADR-0003)
+
+### B. Decisiones técnicas (`DECISIONES.md`, `docs/architecture/C4.md`)
+
+- [x] **1. Qué es un agente aquí** y qué problema de negocio resuelve — §1
+- [x] **2. Tools**: contrato, seguridad, idempotencia, permisos, auditoría, y si la misma capa sirve a humano y agente — §4
+- [x] **3. Contexto y estado** entre pasos (elegibilidad, perfil, simulación elegida, documentos, costo de la llave) — §3
+- [x] **4. Determinismo vs. IA** — §5
+- [x] **5. Guardrails y human-in-the-loop**: controles antes de "listo", evitar el caso o cliente equivocado, escalación — §7 y `docs/THREAT_MODEL.md`
+- [x] **6. Observabilidad mínima**: rechazos correctos por auto, falsos OK documentales, mismatches y casos con llave cotizada — §9, `make report`, `make eval`
+
+### Formato de entrega
+
+- [x] Repositorio con código + instrucciones para correr la demo y los tests (este README)
+- [x] Documento con decisiones y diagrama (`DECISIONES.md` abre con un resumen de una página y su diagrama; el detalle está debajo)
+- [x] Se ve el razonamiento, los trade-offs y los límites (`DECISIONES.md` §11 y §12)
+- [ ] **El criterio tiene que ser del autor**: reescribir "Cómo usé IA en la construcción" con sus palabras y poder defender cada decisión en vivo *(pendiente del autor)*
+- [ ] Entrega por correo al menos 5 horas antes de la presentación *(pendiente del autor)*
+
+### Lo que el enunciado permite y aquí queda simulado o sin ejercitar
+
+- [ ] **Lectura real de documentos (OCR / visión)**: se usa un mock con extracción y confianza por campo; el enunciado lo permite, y el valor está en lo que se valida en código
+- [ ] **Buró de Crédito real**: mock (el enunciado lo permite)
+- [ ] **MongoDB real y APIs reales de OpenAI, Gemini, DeepSeek y Anthropic**: probados con `mongomock` y transportes simulados; hay una prueba de integración (`make integration`) que se omite sin servidor
+- [ ] **Fuera de alcance, no hecho**: originación, créditos activos y cobranza; CAT e IVA
 
 ## Cómo se ve la API
 
@@ -53,7 +115,8 @@ make run
 curl -s localhost:8000/cases -H 'content-type: application/json' -d '{
   "case_id":"demo","customer_id":"cust-s01","vehicle_id":"veh-s01",
   "customer_name":"Juan Pérez López","declared_income":"20000.00",
-  "requested_amount":"80000","phone_last4":"1234"}'
+  "requested_amount":"80000","address_street":"Calle Reforma 10",
+  "address_postal_code":"06600","phone_last4":"1234"}'
 TOKEN=$(curl -s localhost:8000/cases/demo/verify -H 'content-type: application/json' \
   -d '{"phone_last4":"1234"}' | jq -r .session_token)
 # 2. un turno de conversación

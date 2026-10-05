@@ -41,7 +41,7 @@ En WSL sobre `/mnt/c` el `uv sync` es muy lento: `export UV_LINK_MODE=copy UV_PR
 
 **LLM** (patrón Strategy): `ports.LLMPort`; proveedores en `adapters/llm/` (`openai`, `deepseek`, `gemini`, `anthropic`, `scripted`, `ConstantLLM`); `registry.create_llm("gemini,openai")` arma cadena con fallback. `LLMPolicy` cae a `RuleBasedPolicy` ante error/acción inválida y abre circuito por caso tras 3 fallos. Prompts en `agent/prompts/*.md`.
 
-**Escenarios y evaluación**: 12 escenarios en `fixtures/scenarios/` con scripts de LLM en `mocks/llm_responses/` (el 09 está escrito a mano: el "modelo" se deja engañar). `agent/scenarios.py` los corre; `observability/evaluation.py` arma el set etiquetado (escenarios + 19 variantes + un modelo hostil) y los intentos de bypass. `config/*.yaml`: un archivo por ambiente (`AGENT_ENV`), más `profile_policy.yaml`, `document_policy.yaml` (umbrales versionados) y `principals.yaml` (scopes).
+**Escenarios y evaluación**: 12 escenarios en `fixtures/scenarios/` con scripts de LLM en `mocks/llm_responses/` (el 09 está escrito a mano: el "modelo" se deja engañar). `agent/scenarios.py` los corre; `observability/evaluation.py` arma el set etiquetado (escenarios + 25 variantes + un modelo hostil) y los intentos de bypass. `config/*.yaml`: un archivo por ambiente (`AGENT_ENV`), más `profile_policy.yaml`, `document_policy.yaml` (umbrales versionados) y `principals.yaml` (scopes).
 
 ## Reglas que no se deben violar
 
