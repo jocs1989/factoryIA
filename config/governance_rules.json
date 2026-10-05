@@ -1,0 +1,4 @@
+{
+  "_comment": "Deny-by-default: una tool sin regla se deniega. Ilustrativo.",
+  "tools": {}
+}

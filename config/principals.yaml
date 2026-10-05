@@ -1,0 +1,27 @@
+# Quien llama. La clave se resuelve por variable de entorno; sin clave el
+# principal solo se usa en proceso (CLI/demo), no por HTTP.
+principals:
+  - id: customer-agent
+    kind: agent
+    api_key_env: AGENT_CLIENT_API_KEY
+    scopes:
+      - case:read
+      - case:write
+      - case:escalate
+      - case:mark_ready   # el gate se reevalua dentro de la tool
+      - vehicle:read
+      - quote:read
+      - consent:write
+      - bureau:query
+      - simulation:run
+      - document:write
+      - document:validate
+  - id: advisor
+    kind: human
+    api_key_env: ADVISOR_API_KEY
+    scopes:
+      - case:read
+      - case:write
+      - case:escalate
+      - case:mark_ready
+      - ticket:resolve
