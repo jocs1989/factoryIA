@@ -4,7 +4,7 @@
 Aceptada (2026-10-08).
 
 ## Contexto
-La auditoría señaló dos debilidades: (1) el set de evaluación lo etiqueté yo con fixtures míos, así que "0 falsos OK" vale sobre ese set y no se generaliza; (2) los guiones del "LLM" se graban de la política por reglas, por lo que "ambas políticas dan lo mismo" prueba el cableado, no la calidad de un modelo.
+La auditoría señaló dos debilidades: (1) el set de evaluación lo etiquetó el mismo autor del código, con fixtures propios, así que "0 falsos OK" vale sobre ese set y no se generaliza; (2) los guiones del "LLM" se graban de la política por reglas, por lo que "ambas políticas dan lo mismo" prueba el cableado, no la calidad de un modelo.
 
 ## Decisión
 Verificar en capas que no dependen de lo que el autor imaginó:

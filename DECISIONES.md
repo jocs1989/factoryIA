@@ -246,9 +246,9 @@ y comprueba que la evaluación se pone en rojo.
 Un falso OK cuesta más que un falso rechazo; por eso los umbrales son
 conservadores y cualquier duda ⇒ corrección o escalada, nunca OK.
 
-**Límite de esa evaluación, dicho sin rodeos:** el set lo etiqueté yo con
-fixtures míos, así que "0 falsos OK" vale sobre ese set. Por eso hay dos capas
-más que no dependen de mi imaginación (ADR-0008): **pruebas de propiedades**
+**Límite de esa evaluación, dicho sin rodeos:** el set lo etiquetó el mismo
+autor del código, con fixtures propios, así que "0 falsos OK" vale sobre ese set. Por eso hay dos capas
+más que no dependen de lo que el autor imaginó (ADR-0008): **pruebas de propiedades**
 con `hypothesis` (la cuota nunca baja al subir la tasa, el tope LTV incluye la
 llave, menos ingreso comprobado nunca es mejor veredicto...) y **fuzzing** en
 el que el azar elige acciones, argumentos, principals e incluso lo que
@@ -333,7 +333,7 @@ hizo, con el ADR que lo explica:
 |---|---|---|
 | `Case.data` era un dict sin esquema | `CaseFacts` con `extra="forbid"` al escribir y cargar | ADR-0007 |
 | `catalog.py` de 1 076 líneas | un handler por etapa en `tools/handlers/` | `tools/` |
-| La evaluación la escribí yo | propiedades (`hypothesis`) y fuzzing con un LLM caótico, con semillas nuevas | ADR-0008 |
+| El set de evaluación lo etiquetó el mismo autor del código | propiedades (`hypothesis`) y fuzzing con un LLM caótico, con semillas nuevas | ADR-0008 |
 | "Ambas políticas dan lo mismo" era circular | se declara el límite y se agregó `make smoke-llm` con un modelo real | ADR-0008 |
 | El bloqueo permitía dejar fuera al cliente legítimo | bloqueo temporal con `Retry-After` | ADR-0006 |
 | Sesiones sin purga | `SessionStore` con vencimiento y tope | ADR-0006 |
