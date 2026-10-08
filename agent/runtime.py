@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import uuid
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, time
 from pathlib import Path
@@ -58,6 +59,7 @@ class Runtime:
     principals: PrincipalRegistry
     policy: Policy
     providers: Providers
+    check_ready: Callable[[], None] = lambda: None  # lanza si no esta listo
 
     def create_case(self, data: dict[str, Any]) -> Case:
         missing = [f for f in REQUIRED_CASE_FIELDS if not data.get(f)]
@@ -81,13 +83,18 @@ def _clock(fixed_today: str) -> Any:
     return lambda: fixed
 
 
-def _mongo_collections(settings: Settings) -> tuple[Any, Any, Any]:
+def _mongo(settings: Settings) -> Any:
+    """Cliente y base de datos; crea los indices (idempotente)."""
     from pymongo import MongoClient
 
-    client: MongoClient[dict[str, Any]] = MongoClient(settings.mongo_uri)
+    from adapters.mongo_indexes import ensure_indexes
+
+    client: MongoClient[dict[str, Any]] = MongoClient(
+        settings.mongo_uri, serverSelectionTimeoutMS=3000
+    )
     db = client[settings.mongo_db]
-    db.idempotency.create_index("_id")
-    return db.cases, db.tickets, db.idempotency
+    ensure_indexes(db)
+    return client, db
 
 
 def build_runtime(
@@ -109,11 +116,18 @@ def build_runtime(
         from adapters.idempotency_mongo import MongoIdempotency
         from adapters.inbox_mongo import MongoInbox
 
-        cases, tickets, idem = _mongo_collections(settings)
-        repo: Any = MongoCaseRepository(cases)
-        inbox: Any = MongoInbox(tickets)
-        idempotency: Any = MongoIdempotency(idem)
+        client, db = _mongo(settings)
+        repo: Any = MongoCaseRepository(db.cases)
+        inbox: Any = MongoInbox(db.tickets)
+        idempotency: Any = MongoIdempotency(db.idempotency)
+
+        def check_ready() -> None:
+            client.admin.command("ping")
     else:
+
+        def check_ready() -> None:
+            return None
+
         repo, inbox, idempotency = (
             MemoryCaseRepository(),
             MemoryInbox(),
@@ -176,4 +190,5 @@ def build_runtime(
         principals=principals,
         policy=policy,
         providers=providers,
+        check_ready=check_ready,
     )

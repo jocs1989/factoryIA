@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+from datetime import UTC, datetime
 from typing import Any
 
 from pymongo.collection import Collection
@@ -20,4 +21,10 @@ class MongoIdempotency:
     def put(self, key: str, result: dict[str, Any]) -> None:
         # Si ya hay uno, gana el primero.
         with contextlib.suppress(DuplicateKeyError):
-            self._coll.insert_one({"_id": key, "result": result})
+            self._coll.insert_one(
+                {
+                    "_id": key,
+                    "result": result,
+                    "created_at": datetime.now(UTC),  # indice TTL
+                }
+            )
