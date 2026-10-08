@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Any
 
 from agent import intent
@@ -19,7 +20,8 @@ DOC_NAMES = {
 
 
 def _money(value: str) -> str:
-    return f"${float(value):,.2f}"
+    """Formatea un monto en pesos sin pasar por `float`."""
+    return f"${Decimal(value):,.2f}"
 
 
 class RuleBasedPolicy(Policy):
@@ -147,7 +149,7 @@ class RuleBasedPolicy(Policy):
             (
                 o["second_key_cost"]
                 for o in c["simulation_options"]
-                if float(o["second_key_cost"]) > 0
+                if Decimal(o["second_key_cost"]) > 0
             ),
             None,
         )
