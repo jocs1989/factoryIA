@@ -4,13 +4,14 @@ from decimal import Decimal
 
 import pytest
 
-from adapters.providers import Providers, build_providers
+from adapters.providers import Providers
+from mocks.wiring import mock_providers
 from ports import DocumentRef, NotFoundError, ProviderError
 
 
 @pytest.fixture(scope="module")
 def prov() -> Providers:
-    return build_providers()
+    return mock_providers()
 
 
 def test_buro_normaliza_el_reporte(prov: Providers) -> None:
@@ -84,3 +85,19 @@ def test_canal(prov: Providers) -> None:
     assert prov.channel.send("case-1", "hola").startswith("msg-")
     with pytest.raises(ProviderError):
         prov.channel.send("case-channel-down", "hola")
+
+
+def test_produccion_no_tiene_destino_por_omision() -> None:
+    from adapters.providers import build_providers
+
+    with pytest.raises(ValueError, match="URL de los proveedores"):
+        build_providers()
+
+
+def test_el_codigo_de_produccion_no_importa_mocks() -> None:
+    """Arquitectura: `adapters/` no depende de `mocks/` (solo al reves)."""
+    import pathlib
+
+    for path in pathlib.Path("adapters").rglob("*.py"):
+        text = path.read_text(encoding="utf-8")
+        assert "from mocks" not in text and "import mocks" not in text, path

@@ -1,10 +1,13 @@
-"""Arma los clientes de proveedores. En `mock` el transporte es el motor
-de mocks en proceso; en otros ambientes, la URL real."""
+"""Arma los clientes HTTP de los proveedores externos.
+
+Este modulo es de produccion y NO conoce los mocks: recibe la URL base de
+los proveedores o un cliente `httpx` ya configurado. Quien quiera los mocks
+en proceso los cablea desde la raiz de composicion (`mocks.wiring`).
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import httpx
 
@@ -14,7 +17,6 @@ from adapters.document_reader_http import HttpDocumentReader
 from adapters.http_client import ProviderClient
 from adapters.key_quote_http import HttpKeyQuote
 from adapters.vehicle_registry_http import HttpVehicleRegistry
-from mocks.transport import DEFAULT_MAPPINGS, MockEngineTransport
 
 
 @dataclass(frozen=True)
@@ -29,15 +31,17 @@ class Providers:
 def build_providers(
     base_url: str = "",
     *,
-    mappings_dir: Path = DEFAULT_MAPPINGS,
     client: httpx.Client | None = None,
 ) -> Providers:
-    """Sin `base_url` usa el motor de mocks en proceso (sin red)."""
+    """Construye los cinco clientes de proveedores.
+
+    Se exige `base_url` o un `client` con transporte propio: no hay un
+    destino por omision, para que un ambiente mal configurado falle al
+    arrancar y no hable con un destino inesperado.
+    """
     if client is None and not base_url:
-        client = httpx.Client(
-            transport=MockEngineTransport.from_dir(mappings_dir)
-        )
-    url = base_url or "http://mock.local"
+        raise ValueError("define la URL de los proveedores o un cliente")
+    url = base_url or "http://providers.local"
 
     def http(name: str) -> ProviderClient:
         return ProviderClient(name, url, client)

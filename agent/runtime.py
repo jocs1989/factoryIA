@@ -27,6 +27,7 @@ from config.settings import Settings
 from domain.case import Case, Stage
 from domain.documents import load_document_policy
 from domain.profile import load_profile_policy
+from mocks.wiring import mock_providers
 from ports import LLMPort
 from tools.catalog import build_catalog
 from tools.deps import Deps, utc_now
@@ -118,11 +119,12 @@ def build_runtime(
             MemoryInbox(),
             MemoryIdempotency(),
         )
-    providers = (
-        build_providers(settings.providers_base_url, mappings_dir=mappings_dir)
-        if mappings_dir
-        else build_providers(settings.providers_base_url)
-    )
+    if settings.providers_base_url:
+        providers = build_providers(settings.providers_base_url)
+    else:  # sin URL: motor de mocks en proceso (mock y pruebas)
+        providers = (
+            mock_providers(mappings_dir) if mappings_dir else mock_providers()
+        )
     deps = Deps(
         repo=repo,
         inbox=inbox,

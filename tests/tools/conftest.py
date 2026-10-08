@@ -10,10 +10,11 @@ from adapters.audit_memory import MemoryAudit
 from adapters.case_repo_memory import MemoryCaseRepository
 from adapters.idempotency_memory import MemoryIdempotency
 from adapters.inbox_memory import MemoryInbox
-from adapters.providers import Providers, build_providers
+from adapters.providers import Providers
 from domain.case import Case, Stage
 from domain.documents import load_document_policy
 from domain.profile import load_profile_policy
+from mocks.wiring import mock_providers
 from tools.catalog import build_catalog
 from tools.deps import Deps
 from tools.executor import Executor
@@ -45,7 +46,7 @@ class Env:
     """Entorno completo en memoria con los mocks de proveedores."""
 
     def __init__(self) -> None:
-        self.providers: Providers = build_providers()
+        self.providers: Providers = mock_providers()
         self.repo = MemoryCaseRepository()
         self.inbox = MemoryInbox()
         self.audit = MemoryAudit()
