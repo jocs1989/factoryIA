@@ -11,7 +11,7 @@ export AGENT_ENV ?= mock
 PKGS = api config domain adapters tools mocks agent observability cli scripts
 
 .PHONY: sync lint types sast docstrings test eval demo report run mocks-validate mocks-serve \
-	record-llm smoke-llm integration up start stop logs status clean check help
+	record-llm smoke-llm smoke integration up start stop logs status clean check help
 
 sync:
 	uv sync --group dev
@@ -70,6 +70,11 @@ record-llm:
 #   make smoke-llm ENV_FILE=/ruta/al/env SCENARIO=01
 smoke-llm:
 	uv run python -m scripts.smoke_llm --env-file "$(ENV_FILE)" --scenario $(or $(SCENARIO),01) --timeline
+
+# Prueba de humo HTTP contra la pila levantada (`make start`).
+smoke:
+	uv run python -m scripts.smoke_http --base http://localhost:$(API_PORT) \
+		--key "$${AGENT_CLIENT_API_KEY:-demo-canal-no-usar-en-prod}"
 
 # Contra un MongoDB real: `MONGO_URI=mongodb://localhost:27017 make integration`
 integration:
