@@ -161,7 +161,9 @@ def build_runtime(
     if policy is None:
         if settings.policy == "llm":
             model = llm or create_llm(
-                settings.llm_backend, model=settings.llm_model or None
+                settings.llm_backend,
+                model=settings.llm_model or None,
+                retries=settings.llm_max_retries,
             )
             policy = LLMPolicy(model, rules, audit, clock=clock)
         else:

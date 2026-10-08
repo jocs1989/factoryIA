@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     allow_anonymous_principal: bool = False
     llm_backend: str = "scripted"
     llm_model: str = ""
+    llm_max_retries: int = 2  # reintentos con backoff por proveedor
     repo_backend: str = "memory"
     policy: str = "rules"  # rules | llm
     audit_backend: str = "memory"  # memory | jsonl

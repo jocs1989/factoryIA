@@ -17,6 +17,7 @@ from adapters.llm.base import HttpLLM
 from adapters.llm.fallback import FallbackLLM
 from adapters.llm.gemini import GeminiLLM
 from adapters.llm.openai_compat import DeepSeekLLM, OpenAICompatLLM
+from adapters.llm.retry import RetryingLLM
 from adapters.llm.scripted import ScriptedLLM
 from ports import LLMError, LLMPort
 
@@ -64,26 +65,38 @@ def create_llm(
     env: Mapping[str, str] | None = None,
     client: httpx.Client | None = None,
     scripted: Callable[[], ScriptedLLM] | None = None,
+    retries: int = 0,
 ) -> LLMPort:
-    """`name` puede ser un proveedor o una cadena 'gemini,openai'."""
+    """`name` puede ser un proveedor o una cadena 'gemini,openai'.
+
+    `retries` > 0 envuelve cada proveedor HTTP con reintento con backoff
+    ante errores transitorios; el respaldo entre proveedores va por encima.
+    """
     if "," in name:
         parts = [n.strip() for n in name.split(",") if n.strip()]
         return FallbackLLM(
-            [create_llm(n, model=model, env=env, client=client) for n in parts]
+            [
+                create_llm(
+                    n, model=model, env=env, client=client, retries=retries
+                )
+                for n in parts
+            ]
         )
     if name == "scripted":
         return scripted() if scripted else ScriptedLLM([])
     if name == "azure":
         source = os.environ if env is None else env
-        return AzureOpenAILLM.from_env(source, model=model, client=client)
+        azure = AzureOpenAILLM.from_env(source, model=model, client=client)
+        return RetryingLLM(azure, max_retries=retries) if retries else azure
     spec = PROVIDERS.get(name)
     if spec is None:
         known = ", ".join(["scripted", "azure", *PROVIDERS])
         raise LLMError(f"proveedor desconocido {name!r} (hay: {known})")
     source = os.environ if env is None else env
-    return spec.cls(
+    llm = spec.cls(
         api_key=source.get(spec.key_env, ""),
         model=model or spec.default_model,
         base_url=spec.base_url,
         client=client,
     )
+    return RetryingLLM(llm, max_retries=retries) if retries else llm
