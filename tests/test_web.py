@@ -23,9 +23,15 @@ def test_nginx_inyecta_una_credencial_distinta_por_ruta() -> None:
 def test_compose_tiene_el_servicio_web_y_claves_de_demo() -> None:
     compose = yaml.safe_load(Path("docker-compose.yml").read_text())
     assert set(compose["services"]) == {"mongo", "mocks", "api", "web"}
+    # los contenedores propios corren con permisos minimos
+    for name in ("api", "mocks"):
+        svc = compose["services"][name]
+        assert svc["read_only"] is True and svc["cap_drop"] == ["ALL"]
+        assert "no-new-privileges:true" in svc["security_opt"]
     web = compose["services"]["web"]
-    assert "8080:80" in web["ports"]
-    # arranca sin configurar nada; las claves de demo se ven como de demo
+    # el puerto del equipo es configurable; 8080 es el valor por omision
+    assert web["ports"] == ["${WEB_PORT:-8080}:80"]
+    # arranca sin configurar nada; las claves de demo lo parecen
     assert "demo-" in web["environment"]["ADVISOR_API_KEY"]
     api = compose["services"]["api"]["environment"]
     assert api["FIXED_TODAY"] == "2026-10-05"  # los fixtures no caducan
