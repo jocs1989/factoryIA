@@ -5,26 +5,43 @@ Mismo ejecutor para ambos: el asesor es otro `principal` con otros scopes.
 
 from __future__ import annotations
 
-import secrets
+import re
 import time
-from collections.abc import AsyncIterator
+import uuid
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import Depends, FastAPI, Header, HTTPException, Request
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from agent.runner import TurnResult
 from agent.runtime import Runtime, build_runtime
 from agent.scenarios import load_scenarios
 from agent.types import CustomerEvent, DocRef
+from api.security import AttemptLimiter, RateLimiter, SessionStore
 from config.settings import load_settings
+from config.validation import ensure_valid
+from observability.logging import (
+    configure_logging,
+    get_logger,
+    log_fields,
+    reset_correlation_id,
+    set_correlation_id,
+)
+from ports import CaseExists
 from tools.executor import ToolResult, ToolStatus
 from tools.principals import Principal
 from tools.session import IdentityError, Session
 
 SESSION_TTL_S = 3600
 MAX_VERIFY_FAILURES = 5
+MESSAGES_PER_MINUTE = 30  # por sesion: protege el costo del LLM
+MAX_BODY_BYTES = 64 * 1024  # nada legitimo de esta API pesa mas
+_CORRELATION_OK = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+log = get_logger("api")
 
 _STATUS = {
     "SCOPE_DENIED": 403,
@@ -87,12 +104,62 @@ def _http_error(result: ToolResult) -> HTTPException:
 def create_app(runtime: Runtime | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        app.state.runtime = runtime or build_runtime(load_settings())
-        app.state.sessions = {}  # token -> (case_id, expira)
-        app.state.failures = {}  # case_id -> intentos fallidos
+        rt_ = runtime or build_runtime(load_settings())
+        configure_logging(rt_.settings.log_level, rt_.settings.log_format)
+        # Fail-fast: un ambiente inseguro o incompleto no arranca.
+        ensure_valid(rt_.settings, rt_.principals)
+        app.state.runtime = rt_
+        app.state.sessions = SessionStore(SESSION_TTL_S)
+        app.state.attempts = AttemptLimiter(MAX_VERIFY_FAILURES)
+        app.state.limiter = RateLimiter(MESSAGES_PER_MINUTE, 60)
+        log.info("api lista", extra=log_fields(env=rt_.settings.agent_env))
         yield
 
     app = FastAPI(title="Auto Equity Agent", lifespan=lifespan)
+
+    @app.middleware("http")
+    async def observe(
+        request: Request,
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
+        """Correlacion, tope de cuerpo, cabeceras seguras y log."""
+        sent = request.headers.get("x-correlation-id", "")
+        cid = sent if _CORRELATION_OK.match(sent) else uuid.uuid4().hex[:16]
+        token = set_correlation_id(cid)
+        t0 = time.perf_counter()
+        try:
+            length = int(request.headers.get("content-length") or 0)
+            if length > MAX_BODY_BYTES:
+                response: Response = JSONResponse(
+                    {"detail": "cuerpo demasiado grande"}, status_code=413
+                )
+            else:
+                try:
+                    response = await call_next(request)
+                except Exception:
+                    # Sin traza ni datos hacia el cliente; la traza (ya
+                    # redactada) queda en el log con el id de correlacion.
+                    log.exception("error no controlado")
+                    response = JSONResponse(
+                        {"detail": "error interno", "correlation_id": cid},
+                        status_code=500,
+                    )
+            response.headers["X-Correlation-ID"] = cid
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["Cache-Control"] = "no-store"
+            response.headers["Referrer-Policy"] = "no-referrer"
+            log.info(
+                "peticion",
+                extra=log_fields(
+                    method=request.method,
+                    path=request.url.path,
+                    status=response.status_code,
+                    ms=int((time.perf_counter() - t0) * 1000),
+                ),
+            )
+            return response
+        finally:
+            reset_correlation_id(token)
 
     def rt(request: Request) -> Runtime:
         runtime_: Runtime = request.app.state.runtime
@@ -126,10 +193,11 @@ def create_app(runtime: Runtime | None = None) -> FastAPI:
         case_id: str,
         x_session_token: str | None = Header(default=None),
     ) -> Session:
-        entry = request.app.state.sessions.get(x_session_token or "")
-        if entry is None or entry[1] < time.time():
+        store: SessionStore = request.app.state.sessions
+        owner = store.get(x_session_token or "")
+        if owner is None:
             raise HTTPException(401, "sesion invalida o vencida")
-        if entry[0] != case_id:
+        if owner != case_id:
             raise HTTPException(403, "la sesion no corresponde al caso")
         return Session(case_id=case_id)
 
@@ -142,6 +210,18 @@ def create_app(runtime: Runtime | None = None) -> FastAPI:
             "policy": r.policy.name,
             "repo": r.settings.repo_backend,
         }
+
+    @app.get("/ready")
+    def ready(request: Request) -> dict[str, str]:
+        """Readiness: el servicio puede atender (p. ej. Mongo responde)."""
+        try:
+            rt(request).check_ready()
+        except Exception as exc:
+            log.warning(
+                "no esta listo", extra=log_fields(error=type(exc).__name__)
+            )
+            raise HTTPException(503, "dependencia no disponible") from None
+        return {"status": "ready"}
 
     @app.get("/demo/scenarios")
     def demo_scenarios(request: Request) -> list[dict[str, Any]]:
@@ -162,6 +242,14 @@ def create_app(runtime: Runtime | None = None) -> FastAPI:
     ) -> dict[str, str]:
         try:
             case = rt(request).create_case(body.model_dump(exclude_none=True))
+        except CaseExists:
+            raise HTTPException(409, "el caso ya existe") from None
+        except ValidationError as exc:
+            # Solo los nombres de los campos: nunca se devuelven los valores.
+            fields = ", ".join(
+                ".".join(map(str, e["loc"])) for e in exc.errors()
+            )
+            raise HTTPException(422, f"campos invalidos: {fields}") from None
         except ValueError as exc:
             raise HTTPException(422, str(exc)) from exc
         return {"case_id": case.case_id, "stage": case.stage.value}
@@ -173,22 +261,29 @@ def create_app(runtime: Runtime | None = None) -> FastAPI:
         request: Request,
         _: Principal = Depends(channel_principal),
     ) -> dict[str, Any]:
-        failures: dict[str, int] = request.app.state.failures
-        if failures.get(case_id, 0) >= MAX_VERIFY_FAILURES:
-            raise HTTPException(429, "demasiados intentos; contacta a soporte")
+        attempts: AttemptLimiter = request.app.state.attempts
+        wait = attempts.retry_after(case_id)
+        if wait:
+            raise HTTPException(
+                429,
+                "demasiados intentos; vuelve a intentar mas tarde",
+                headers={"Retry-After": str(wait)},
+            )
         try:
             rt(request).verify(case_id, body.phone_last4)
         except IdentityError:
-            failures[case_id] = failures.get(case_id, 0) + 1
+            attempts.record_failure(case_id)
+            log.warning(
+                "verificacion fallida", extra=log_fields(case_id=case_id)
+            )
             # Mismo error exista o no el caso: no se revela cual fallo.
             raise HTTPException(403, "verificacion fallida") from None
-        failures.pop(case_id, None)
-        token = secrets.token_urlsafe(24)
-        request.app.state.sessions[token] = (
-            case_id,
-            time.time() + SESSION_TTL_S,
-        )
-        return {"session_token": token, "expires_in": SESSION_TTL_S}
+        attempts.reset(case_id)
+        store: SessionStore = request.app.state.sessions
+        return {
+            "session_token": store.create(case_id),
+            "expires_in": SESSION_TTL_S,
+        }
 
     @app.post("/conversations/{case_id}/messages")
     def message(
@@ -198,6 +293,13 @@ def create_app(runtime: Runtime | None = None) -> FastAPI:
         session: Session = Depends(session_for),
         _: Principal = Depends(channel_principal),
     ) -> TurnResult:
+        limiter: RateLimiter = request.app.state.limiter
+        if not limiter.allow(session.case_id):
+            raise HTTPException(
+                429,
+                "demasiados mensajes; espera un momento",
+                headers={"Retry-After": "60"},
+            )
         event = CustomerEvent(text=body.text, documents=tuple(body.documents))
         return rt(request).runner.turn(session, event)
 
