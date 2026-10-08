@@ -42,7 +42,7 @@ def test_la_evaluacion_detecta_un_gate_roto(
 ) -> None:
     """Si alguien rompiera el gate, esta evaluacion debe ponerse en rojo."""
     monkeypatch.setattr(
-        "tools.catalog.evaluate_readiness",
+        "tools.handlers.gate.evaluate_readiness",
         lambda inputs: ReadinessDecision(
             status=ReadinessStatus.OK,
             checks={},
