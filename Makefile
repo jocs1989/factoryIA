@@ -28,6 +28,7 @@ test:
 # Set etiquetado con documentos adversariales. Falla si hay un falso OK.
 eval:
 	uv run python -m cli.eval
+	uv run pytest tests/evals -q -p no:cacheprovider
 
 # Todos los escenarios, sin red. `make demo ARGS="--scenario 05 --timeline"`.
 demo:
