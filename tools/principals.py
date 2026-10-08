@@ -46,6 +46,14 @@ class PrincipalRegistry:
             items.append((principal, env.get(raw.get("api_key_env", ""), "")))
         return cls(items)
 
+    def has_key(self, principal_id: str) -> bool:
+        """True si el principal tiene una credencial resuelta."""
+        return any(p.id == principal_id for _, p in self._keys)
+
+    def key_of(self, principal_id: str) -> str:
+        """Credencial del principal (solo para validar su fortaleza)."""
+        return next((k for k, p in self._keys if p.id == principal_id), "")
+
     def get(self, principal_id: str) -> Principal:
         return self._by_id[principal_id]
 
