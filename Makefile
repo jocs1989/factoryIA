@@ -5,7 +5,7 @@ export AGENT_ENV ?= mock
 PKGS = api config domain adapters tools mocks agent observability cli scripts
 
 .PHONY: sync lint types test eval demo report run mocks-validate mocks-serve \
-	record-llm smoke-llm integration up check
+	record-llm smoke-llm integration up start stop logs status clean check help
 
 sync:
 	uv sync --group dev
@@ -60,7 +60,41 @@ smoke-llm:
 integration:
 	uv run pytest tests/integration -q
 
+# --- Levantar todo (api + mocks + mongo + interfaz) ------------------------
 up:
 	docker compose up --build
+
+# Segundo plano: construye, espera a que la API responda y muestra las URLs.
+start:
+	docker compose up --build -d
+	@echo "esperando a que la API responda..."
+	@for i in $$(seq 1 60); do \
+		curl -sf http://localhost:8000/health >/dev/null && break; sleep 2; done
+	@curl -sf http://localhost:8000/health >/dev/null \
+		|| { echo "la API no respondio: revisa 'make logs'"; exit 1; }
+	@echo ""
+	@echo "  Interfaz visual : http://localhost:8080"
+	@echo "  API (docs)      : http://localhost:8000/docs"
+	@echo "  Mocks           : http://localhost:9000/_mock/health"
+	@echo "  Detener         : make stop     Logs: make logs"
+
+stop:
+	docker compose down
+
+logs:
+	docker compose logs -f --tail=100
+
+status:
+	docker compose ps
+
+# Detiene todo y borra los volumenes (bitacora y datos de Mongo de la demo).
+clean:
+	docker compose down -v
+
+help:
+	@echo "make start    levanta todo con Docker (interfaz en :8080)"
+	@echo "make stop     lo detiene"
+	@echo "make demo     12 escenarios sin Docker ni red"
+	@echo "make check    lint + tipos + tests + evaluacion"
 
 check: lint types mocks-validate test eval

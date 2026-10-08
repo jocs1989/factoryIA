@@ -13,6 +13,37 @@ en código y trazabilidad** de cada decisión.
 
 Stack: Python 3.12 · FastAPI · LangGraph · MongoDB · Pydantic v2 · `uv`.
 
+## Levantar todo con un comando
+
+Requisitos: **Docker** y **make**. No hace falta Python, Node ni claves.
+
+```bash
+make start      # construye y levanta api + mocks + MongoDB + interfaz (segundo plano)
+```
+
+Al terminar imprime las direcciones:
+
+| Qué | URL |
+|---|---|
+| **Interfaz visual** (chat, documentos, decisiones y asesor) | http://localhost:8080 |
+| API (documentación interactiva) | http://localhost:8000/docs |
+| Mocks de proveedores | http://localhost:9000/_mock/health |
+
+```bash
+make logs       # ver los logs en vivo
+make status     # estado de los contenedores
+make stop       # detener todo (conserva los datos)
+make clean      # detener y borrar bitácora y datos de la demo
+make help       # lista rápida
+```
+
+Las claves de demo vienen en `docker-compose.yml` y solo sirven en local; para otras
+definelas con `AGENT_CLIENT_API_KEY` y `ADVISOR_API_KEY`. Para usar un modelo real en vez
+de las reglas: `POLICY=llm LLM_BACKEND=azure AZURE_OPENAI_ENDPOINT=... AZURE_OPENAI_API_KEY=...
+AZURE_OPENAI_DEPLOYMENT_NAME=... make start` (las variables solo viven en ese comando).
+
+Sin Docker, todo corre igual en memoria:
+
 ## Probarlo en 2 minutos (sin red, sin API key, sin Mongo)
 
 ```bash
