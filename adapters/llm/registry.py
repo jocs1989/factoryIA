@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import httpx
 
 from adapters.llm.anthropic import AnthropicLLM
+from adapters.llm.azure_openai import AzureOpenAILLM
 from adapters.llm.base import HttpLLM
 from adapters.llm.fallback import FallbackLLM
 from adapters.llm.gemini import GeminiLLM
@@ -72,9 +73,12 @@ def create_llm(
         )
     if name == "scripted":
         return scripted() if scripted else ScriptedLLM([])
+    if name == "azure":
+        source = os.environ if env is None else env
+        return AzureOpenAILLM.from_env(source, model=model, client=client)
     spec = PROVIDERS.get(name)
     if spec is None:
-        known = ", ".join(["scripted", *PROVIDERS])
+        known = ", ".join(["scripted", "azure", *PROVIDERS])
         raise LLMError(f"proveedor desconocido {name!r} (hay: {known})")
     source = os.environ if env is None else env
     return spec.cls(

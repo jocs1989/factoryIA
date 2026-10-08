@@ -122,3 +122,49 @@ def test_todos_fallan() -> None:
 def test_registro_arma_cadena_desde_texto() -> None:
     chain = create_llm("scripted, scripted")
     assert isinstance(chain, FallbackLLM)
+
+
+def test_azure_arma_url_con_deployment_cabecera_y_parametros_gpt5() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen.append(req)
+        return httpx.Response(200, json=BODIES["openai"])
+
+    env = {
+        "AZURE_OPENAI_ENDPOINT": "https://recurso.openai.azure.com/",
+        "AZURE_OPENAI_API_KEY": "clave-falsa",
+        "AZURE_OPENAI_DEPLOYMENT_NAME": "mi-deployment",
+        "AZURE_OPENAI_API_VERSION": "2024-12-01-preview",
+    }
+    llm = create_llm(
+        "azure",
+        env=env,
+        client=httpx.Client(transport=httpx.MockTransport(handler)),
+    )
+    res = llm.complete(REQ)
+    req = seen[0]
+    assert (res.text, res.provider) == ("ok", "azure")
+    assert str(req.url) == (
+        "https://recurso.openai.azure.com/openai/deployments/mi-deployment"
+        "/chat/completions?api-version=2024-12-01-preview"
+    )
+    assert req.headers["api-key"] == "clave-falsa"
+    assert "authorization" not in req.headers
+    body = __import__("json").loads(req.content)
+    assert "max_completion_tokens" in body
+    assert "max_tokens" not in body and "temperature" not in body
+    assert "model" not in body and body["response_format"]
+
+
+def test_azure_sin_configuracion_falla_claro() -> None:
+    with pytest.raises(LLMError, match="AZURE_OPENAI_ENDPOINT"):
+        create_llm("azure", env={"AZURE_OPENAI_API_KEY": "x"})
+    with pytest.raises(LLMError, match="API key"):
+        create_llm(
+            "azure",
+            env={
+                "AZURE_OPENAI_ENDPOINT": "https://r.openai.azure.com",
+                "AZURE_OPENAI_DEPLOYMENT_NAME": "d",
+            },
+        )
