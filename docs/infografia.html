@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Auto Equity agéntico · Infografía</title>
+<!-- Infografía autocontenida (sin red). Responde el reto técnico "Auto Equity
+     Agéntica" punto por punto. Se exporta a PNG con scripts/render_infografia.py -->
+<style>
+  :root {
+    --ink:#0f172a; --muted:#475569; --line:#e2e8f0; --bg:#f8fafc; --card:#ffffff;
+    --brand:#4338ca; --brand-soft:#eef2ff; --ok:#047857; --ok-soft:#ecfdf5;
+    --warn:#b45309; --warn-soft:#fffbeb; --bad:#be123c; --bad-soft:#fff1f2;
+    --ai:#7c3aed; --ai-soft:#f5f3ff; --code:#0369a1; --code-soft:#f0f9ff;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+    font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  .page { width:1200px; margin:0 auto; padding:36px 40px 44px; background:var(--bg); }
+  h1,h2,h3,p { margin:0; }
+  .hero { background:linear-gradient(135deg,#312e81 0%,#4338ca 55%,#6366f1 100%); color:#fff;
+    border-radius:22px; padding:34px 38px; position:relative; overflow:hidden; }
+  .hero:after { content:"🚗"; position:absolute; right:30px; top:14px; font-size:120px; opacity:.16; }
+  .hero h1 { font-size:36px; letter-spacing:-.5px; line-height:1.15; }
+  .hero p { margin-top:10px; font-size:17px; color:#e0e7ff; max-width:820px; }
+  .rule { margin-top:18px; display:inline-block; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
+    border-radius:999px; padding:8px 18px; font-weight:700; font-size:17px; }
+  .sec { margin-top:30px; }
+  .sec > h2 { font-size:22px; letter-spacing:-.2px; display:flex; align-items:center; gap:10px; }
+  .sec > h2 .n { background:var(--brand); color:#fff; border-radius:999px; min-width:30px; height:30px;
+    display:inline-flex; align-items:center; justify-content:center; font-size:15px; padding:0 8px; }
+  .sec > .sub { color:var(--muted); margin:4px 0 14px 40px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px 18px; }
+  .grid { display:grid; gap:14px; }
+  .g2 { grid-template-columns:repeat(2,1fr); } .g3 { grid-template-columns:repeat(3,1fr); }
+  .g4 { grid-template-columns:repeat(4,1fr); } .g5 { grid-template-columns:repeat(5,1fr); }
+  .g6 { grid-template-columns:repeat(6,1fr); }
+  .tag { display:inline-block; font-size:12px; font-weight:700; border-radius:999px; padding:2px 10px; }
+  .t-ok{background:var(--ok-soft);color:var(--ok)} .t-bad{background:var(--bad-soft);color:var(--bad)}
+  .t-warn{background:var(--warn-soft);color:var(--warn)} .t-ai{background:var(--ai-soft);color:var(--ai)}
+  .t-code{background:var(--code-soft);color:var(--code)} .t-brand{background:var(--brand-soft);color:var(--brand)}
+  .small { font-size:13px; color:var(--muted); }
+  ul.tight { margin:6px 0 0; padding-left:18px; } ul.tight li { margin:2px 0; }
+  /* flujo */
+  .flow { display:grid; grid-template-columns:repeat(4,1fr) 1.15fr; gap:12px; align-items:stretch; }
+  .step { position:relative; }
+  .step .num { position:absolute; top:-12px; left:14px; background:var(--brand); color:#fff; border-radius:999px;
+    width:26px; height:26px; text-align:center; line-height:26px; font-weight:800; font-size:14px; }
+  .step h3 { font-size:17px; margin-top:4px; }
+  .step .who { margin-top:8px; font-size:13px; }
+  .step .who b { display:block; margin-top:6px; }
+  .arrow:after { content:"→"; position:absolute; right:-13px; top:42%; font-size:20px; color:var(--brand); font-weight:900; z-index:2; }
+  .out-ok { border-color:#a7f3d0; background:var(--ok-soft); }
+  .out-esc { margin-top:8px; border:1px dashed #c4b5fd; background:var(--ai-soft); border-radius:12px; padding:8px 10px; font-size:13px; }
+  /* oro */
+  .split { display:grid; grid-template-columns:1fr 1fr; border-radius:16px; overflow:hidden; border:1px solid var(--line); }
+  .split > div { padding:16px 20px; } .split .ia { background:var(--ai-soft); } .split .cd { background:var(--code-soft); }
+  .split h3 { font-size:18px; margin-bottom:6px; }
+  /* arquitectura */
+  .arch { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; align-items:stretch; }
+  .layer { border-radius:14px; padding:12px 12px; border:1px solid var(--line); background:#fff; font-size:13px; }
+  .layer h4 { margin:0 0 6px; font-size:14px; } .layer.pure { background:var(--code-soft); border-color:#bae6fd; }
+  .layer.ag { background:var(--ai-soft); border-color:#ddd6fe; } .layer.io { background:var(--warn-soft); border-color:#fde68a; }
+  .layer small { color:var(--muted); display:block; margin-top:5px; }
+  /* pipeline */
+  .pipe { display:grid; grid-template-columns:repeat(8,1fr); gap:8px; counter-reset:p; }
+  .pipe div { background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 8px; font-size:12.5px; text-align:center; position:relative; }
+  .pipe div:before { counter-increment:p; content:counter(p); display:block; font-weight:800; color:#fff; background:var(--brand);
+    width:22px; height:22px; line-height:22px; border-radius:999px; margin:0 auto 6px; font-size:12px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; }
+  .chip { background:#fff; border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:600; }
+  .chip:before { content:"✓ "; color:var(--ok); }
+  .q { font-weight:800; color:var(--brand); font-size:13px; letter-spacing:.2px; }
+  .dec h3 { font-size:16px; margin:3px 0 5px; }
+  /* numeros */
+  .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+  .stat { background:#fff; border:1px solid var(--line); border-radius:16px; padding:14px 12px; text-align:center; }
+  .stat b { display:block; font-size:28px; letter-spacing:-1px; color:var(--brand); line-height:1.1; white-space:nowrap; }
+  .stat.ok b { color:var(--ok); } .stat span { font-size:12.5px; color:var(--muted); }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; }
+  th,td { text-align:left; padding:7px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.4px; }
+  code,.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; background:#f1f5f9;
+    padding:1px 6px; border-radius:6px; }
+  .cmd { background:#0f172a; color:#e2e8f0; border-radius:14px; padding:16px 20px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:14px; line-height:1.8; }
+  .cmd i { color:#94a3b8; font-style:normal; } .cmd b { color:#86efac; }
+  .foot { margin-top:26px; text-align:center; color:var(--muted); font-size:13px; }
+  .honest { background:var(--warn-soft); border:1px solid #fde68a; border-radius:16px; padding:14px 18px; }
+  .honest li { margin:3px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ====================================================== portada -->
+  <div class="hero">
+    <h1>Auto Equity agéntico</h1>
+    <p>Un agente que opera de punta a punta <b>Elegibilidad del auto → Perfilamiento → Simulación → Datos y comprobantes</b> de un crédito con garantía de auto, con <b>tools, estado, validaciones y trazabilidad</b>. Así se resolvió el reto.</p>
+    <div class="rule">El LLM propone · el código dispone</div>
+  </div>
+
+  <!-- ====================================================== el reto -->
+  <div class="sec">
+    <h2><span class="n">1</span> El problema y la misión</h2>
+    <p class="sub">Un producto real ya en producción que hoy se opera a mano en un backoffice: un asesor avanza cada caso etapa por etapa. La misión es volver ese tramo agéntico <b>de forma segura</b>, sobre un sistema vivo.</p>
+    <div class="flow">
+      <div class="card step arrow"><span class="num">1</span><h3>Elegibilidad del auto</h3>
+        <div class="who"><span class="tag t-ai">IA</span> qué preguntar; entender «ya lo pagué» o «tengo la llave»<b>Código</b>veredicto: titular, adeudos, llave</div></div>
+      <div class="card step arrow"><span class="num">2</span><h3>Perfilamiento</h3>
+        <div class="who"><span class="tag t-ai">IA</span> pedir la autorización del Buró y explicar<b>Código</b>score → perfil, condiciones, rechazo</div></div>
+      <div class="card step arrow"><span class="num">3</span><h3>Simulación</h3>
+        <div class="who"><span class="tag t-ai">IA</span> destacar opciones según lo que el cliente necesita<b>Código</b>montos, tasas, cuotas, costo de llave</div></div>
+      <div class="card step arrow"><span class="num">4</span><h3>Datos y comprobantes</h3>
+        <div class="who"><span class="tag t-ai">IA</span> pedir, extraer y clasificar documentos<b>Código</b>coincidencias, umbrales, vigencias y el gate</div></div>
+      <div>
+        <div class="card out-ok"><h3 style="font-size:16px">✅ Listo para la financiera</h3><div class="small">solo si pasa el gate completo</div></div>
+        <div class="out-esc">🟣 <b>Pedir corrección</b> o <b>escalar a un asesor</b> ante cualquier duda: <b>nunca OK</b></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================== regla de oro -->
+  <div class="sec">
+    <h2><span class="n">2</span> Qué decide la IA y qué decide el código</h2>
+    <p class="sub">Un falso OK (aprobar un expediente malo) cuesta mucho más que un falso rechazo. Por eso todo lo que mueve dinero o estado es código determinista.</p>
+    <div class="split">
+      <div class="ia"><h3>🤖 La IA (propone)</h3>
+        <ul class="tight"><li>Conversar y decidir la siguiente pregunta</li><li>Extraer campos de los documentos y clasificarlos</li>
+        <li>Redactar la corrección al cliente y el resumen al asesor</li><li>Elegir <i>una</i> acción dentro de la etapa, con lista blanca de tools</li></ul></div>
+      <div class="cd"><h3>⚙️ El código (dispone)</h3>
+        <ul class="tight"><li>Elegibilidad, perfil, cuotas, tasas y costo de la llave (<code>Decimal</code>)</li><li>Match de ingreso, nombre, domicilio, vigencias y aritmética</li>
+        <li>Transiciones de etapa y el gate «listo para financiera»</li><li>Permisos, idempotencia, versión y bitácora</li></ul></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== reglas -->
+  <div class="sec">
+    <h2><span class="n">3</span> Las reglas que pide el reto</h2>
+    <p class="sub">Elegibilidad del auto (determinísticas) y validaciones de datos y comprobantes.</p>
+    <div class="grid g3">
+      <div class="card"><span class="tag t-bad">Sin crédito</span><h3 style="margin-top:6px">Auto no está a nombre del cliente</h3><p class="small">Rechazo definitivo · <code>VEHICLE_NOT_OWNED</code></p></div>
+      <div class="card"><span class="tag t-bad">Sin crédito</span><h3 style="margin-top:6px">Adeudos o gravámenes</h3><p class="small">Impiden la garantía · <code>VEHICLE_ENCUMBERED</code></p></div>
+      <div class="card"><span class="tag t-ok">Continúa</span><h3 style="margin-top:6px">Sin segunda llave</h3><p class="small">No es rechazo: se cotiza y <b>su costo se suma al plan</b> como renglón separado.</p></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <b>Validaciones documentales</b> <span class="small">(política versionada en YAML, límites exactos probados)</span>
+      <div class="chips" style="margin-top:10px">
+        <span class="chip">Ingreso: monto (≤ 10 % acepta · 10–25 % corrige · &gt; 25 % escala)</span>
+        <span class="chip">Moneda MXN y período mensualizado</span>
+        <span class="chip">Nombre de la identificación</span><span class="chip">Domicilio (CP exacto + calle)</span>
+        <span class="chip">Vigencia: recibos 60 d · domicilio 90 d · ID no vencida</span>
+        <span class="chip">Tipo de comprobante vs. situación laboral</span><span class="chip">Titularidad del vehículo</span>
+        <span class="chip">CURP / RFC válidos y coherentes</span><span class="chip">Neto = bruto − deducciones</span>
+        <span class="chip">Confianza baja → corrección (cruzada con validadores)</span>
+        <span class="chip">Cuota ≤ 35 % del ingreso <b>verificado</b></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================== arquitectura -->
+  <div class="sec">
+    <h2><span class="n">4</span> Arquitectura (hexagonal)</h2>
+    <p class="sub">El dominio es puro y no importa infraestructura: cambiar de proveedor es escribir un adaptador. Detalle en <code>docs/architecture/C4.md</code>.</p>
+    <div class="arch">
+      <div class="layer"><h4>🖥️ Canales</h4>Interfaz web · CLI · API REST<small>FastAPI: sesión por caso, límite de tasa, <code>X-Correlation-ID</code></small></div>
+      <div class="layer ag"><h4>🧭 Agente (LangGraph)</h4>Relee el caso y enruta por su <b>etapa</b><small>Política: reglas o LLM con respaldo y circuit breaker · lista blanca por etapa · pausa en la escalada</small></div>
+      <div class="layer ag"><h4>🛡️ Ejecutor único</h4>15 tools con contrato; agente y asesor pasan por el mismo camino<small>otro <i>principal</i>, otros permisos</small></div>
+      <div class="layer pure"><h4>🧠 Dominio puro</h4>Elegibilidad · Perfil · Cuota · Documentos · <b>Gate</b> · Case<small>sin red, sin base de datos: se prueba en frío</small></div>
+      <div class="layer io"><h4>🔌 Puertos y adaptadores</h4>MongoDB · Buró · llave · vehículos · documentos · canal · LLM (OpenAI, Azure, Gemini, DeepSeek, Anthropic)<small>mocks declarativos por HTTP</small></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== pipeline -->
+  <div class="sec">
+    <h2><span class="n">5</span> Cada acción pasa por 8 defensas</h2>
+    <p class="sub">Del agente o del asesor, sin «caminos traseros». Se audita siempre, también cuando se niega.</p>
+    <div class="pipe">
+      <div>Entrada válida<br><span class="small">campos extra ⇒ rechazo</span></div><div>Permiso<br><span class="small">mínimo privilegio</span></div>
+      <div>Caso = el de la sesión</div><div>Idempotencia<br><span class="small">reintento ⇒ mismo resultado</span></div>
+      <div>Etapa permitida</div><div>Ejecuta y valida la salida</div><div>Guarda con versión<br><span class="small">control optimista</span></div><div>Bitácora<br><span class="small">hashes, sin PII</span></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== gate -->
+  <div class="sec">
+    <h2><span class="n">6</span> El gate «listo para financiera»</h2>
+    <p class="sub"><code>mark_ready_for_lender</code> <b>recalcula todo desde los datos dentro de la propia tool</b>: no confía en banderas guardadas ni en lo que diga el agente. Aunque el modelo falle, lo manipulen o se invoque por otro camino, un expediente inconsistente no pasa.</p>
+    <div class="chips">
+      <span class="chip">Elegibilidad OK</span><span class="chip">Perfil aprobado</span><span class="chip">Simulación elegida y vigente (hash recalculado)</span>
+      <span class="chip">Documentos presentes</span><span class="chip">Documentos válidos y vigentes</span><span class="chip">Ingreso e identidad coinciden</span>
+      <span class="chip">Titularidad coherente</span><span class="chip">Capacidad de pago con ingreso verificado</span><span class="chip">Sin correcciones abiertas</span>
+    </div>
+  </div>
+
+  <!-- ====================================================== seis decisiones -->
+  <div class="sec">
+    <h2><span class="n">7</span> Las seis decisiones técnicas del reto, en una línea</h2>
+    <div class="grid g3">
+      <div class="card dec"><span class="q">1 · ¿QUÉ ES UN «AGENTE» ACÁ?</span><h3>Un operador de casos</h3><p class="small">Decide, por etapa, qué tool usar y qué preguntar. Resuelve <i>operar</i> el caso (casos que llegan completos sin retrabajo), no solo responder.</p></div>
+      <div class="card dec"><span class="q">2 · TOOLS</span><h3>Contrato + ejecutor único</h3><p class="small">Modelos Pydantic, permiso, etapas, riesgo e idempotencia. La misma capa sirve al asesor con otro principal: una sola bitácora.</p></div>
+      <div class="card dec"><span class="q">3 · CONTEXTO Y ESTADO</span><h3>El caso es la verdad</h3><p class="small">Agregado <code>Case</code> persistido con versión y esquema tipado. El agente recibe una proyección compacta <b>sin datos personales</b>; el chat no es el estado.</p></div>
+      <div class="card dec"><span class="q">4 · DETERMINISMO VS IA</span><h3>Dinero y estado = código</h3><p class="small">La IA extrae y conversa; el código compara con umbrales versionados. La confianza del modelo se cruza con validadores objetivos.</p></div>
+      <div class="card dec"><span class="q">5 · GUARDRAILS Y HUMANO</span><h3>Defensa en profundidad</h3><p class="small">Gate en la tool, sesión ligada a un caso, texto de documentos = dato, escalada con ticket y pausa; el asesor resuelve con justificación.</p></div>
+      <div class="card dec"><span class="q">6 · OBSERVABILIDAD</span><h3>Se mide, no se afirma</h3><p class="small">Bitácora de decisiones, <code>make report</code> y una evaluación adversarial que falla ante un solo falso OK.</p></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== escalada -->
+  <div class="sec">
+    <h2><span class="n">8</span> Humano en el circuito</h2>
+    <div class="grid g4">
+      <div class="card"><h3 style="font-size:15px">1 · Se escala</h3><p class="small">Inconsistencia grave, perfil dudoso, documento ajeno o texto sospechoso. El grafo <b>se pausa</b>.</p></div>
+      <div class="card"><h3 style="font-size:15px">2 · Ticket</h3><p class="small">Motivo, resumen, evidencia y acción sugerida en la bandeja del asesor.</p></div>
+      <div class="card"><h3 style="font-size:15px">3 · El asesor decide</h3><p class="small">Reanuda con <b>justificación obligatoria</b>, rechaza o declina. Un override queda auditado y no perdona la capacidad de pago.</p></div>
+      <div class="card"><h3 style="font-size:15px">4 · El agente retoma</h3><p class="small">Desde el checkpoint, o desde el caso persistido si el proceso se reinició.</p></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== evidencia -->
+  <div class="sec">
+    <h2><span class="n">9</span> Evidencia: números medidos, no afirmados</h2>
+    <p class="sub">Todo corre sin red ni credenciales. <code>make check</code> reúne lint, tipos, SAST, docstrings, mocks, pruebas y evaluación.</p>
+    <div class="stats">
+      <div class="stat ok"><b>545</b><span>pruebas automáticas</span></div>
+      <div class="stat ok"><b>0</b><span>falsos OK en la evaluación (80 corridas)</span></div>
+      <div class="stat"><b>92%</b><span>cobertura de código</span></div>
+      <div class="stat"><b>100%</b><span>docstrings de la API pública</span></div>
+      <div class="stat"><b>12</b><span>escenarios reproducibles</span></div>
+      <div class="stat"><b>160</b><span>corridas de fuzzing por ejecución, sin romper invariantes</span></div>
+    </div>
+    <div class="grid g2" style="margin-top:14px">
+      <div class="card"><b>Probado contra servicios reales</b>
+        <ul class="tight small"><li>MongoDB 7 real: 10 pruebas (concurrencia optimista, bandeja, reanudación del asesor)</li>
+        <li>Pila completa en Docker + prueba de humo HTTP + navegador</li>
+        <li><b>Azure OpenAI (<code>gpt-5.4-mini</code>)</b>: 3 escenarios, el 100 % de las decisiones las tomó el modelo y el gate negó los intentos indebidos</li></ul></div>
+      <div class="card"><b>Rendimiento medido</b> <span class="small">(1 proceso, mocks, política por reglas)</span>
+        <ul class="tight small"><li>Turno: p50 52 ms · p95 128 ms en secuencial</li><li>≈ 3 conversaciones/s por proceso; con 10 en paralelo el p95 sube a 1,7 s (comparten el GIL)</li>
+        <li>Escalar exige mover sesiones a un almacén compartido</li></ul></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== auditoria -->
+  <div class="sec">
+    <h2><span class="n">10</span> Se auditó y se endureció</h2>
+    <p class="sub">Una autocrítica contra lo que se esperaría de un arquitecto senior; cada hallazgo tiene su acción y su prueba.</p>
+    <table>
+      <tr><th>Hallazgo</th><th>Acción</th></tr>
+      <tr><td><code>Case.data</code> era un dict sin esquema</td><td>Esquema tipado que falla ante claves o tipos inesperados (ADR-0007)</td></tr>
+      <tr><td>Módulo de 1 076 líneas</td><td>Un handler por etapa</td></tr>
+      <tr><td>El set de evaluación lo etiquetó el mismo autor del código</td><td>Propiedades con <code>hypothesis</code> y fuzzing con un LLM caótico (ADR-0008)</td></tr>
+      <tr><td>El bloqueo permitía dejar fuera al cliente legítimo</td><td>Bloqueo temporal, sesiones con vencimiento y límite de tasa (ADR-0006)</td></tr>
+      <tr><td><code>/ready</code> decía «listo» sin poder auditar</td><td>Sin bitácora el servicio no arranca</td></tr>
+      <tr><td>Un nombre con «Ŋ» no coincidía consigo mismo</td><td>Bug real hallado por una propiedad; corregido y con regresión</td></tr>
+      <tr><td>Imagen con root, sin SAST ni humo en CI</td><td>Contenedor sin privilegios y de solo lectura; bandit y prueba de humo</td></tr>
+    </table>
+  </div>
+
+  <!-- ====================================================== honestidad -->
+  <div class="sec">
+    <h2><span class="n">11</span> Lo que NO está hecho</h2>
+    <div class="honest"><ul class="tight">
+      <li>Lector de documentos real (OCR / visión) y Buró real: son <b>mocks</b> (el reto lo permite).</li>
+      <li>Solo <b>Azure OpenAI</b> se probó con un modelo real; OpenAI directo, Gemini, DeepSeek y Anthropic solo contra transportes simulados.</li>
+      <li>Sesiones y límites en memoria de un proceso; datos personales sin cifrar en reposo; sin IaC, DAST ni trazas distribuidas.</li>
+      <li>Los umbrales (bandas, LTV, tasas, 35 %, tolerancias) son <b>supuestos configurables</b>, no cifras del producto.</li>
+      <li>El CI está escrito pero aún no se ejecutó en GitHub.</li>
+    </ul></div>
+  </div>
+
+  <!-- ====================================================== formato de entrega -->
+  <div class="sec">
+    <h2><span class="n">12</span> Formato de entrega: lo que pide el reto y dónde está</h2>
+    <p class="sub">«Valoramos la calidad del razonamiento y del código por sobre la extensión.»</p>
+    <div class="card">
+      <table>
+        <tr><th>El reto pide</th><th>Dónde se cumple</th></tr>
+        <tr><td>✅ Repo con código + instrucciones para correr demo y tests</td><td><code>README.md</code>: <code>make start</code>, <code>make demo</code>, <code>make test</code>, <code>make eval</code>, <code>make check</code></td></tr>
+        <tr><td>✅ Documento corto con diagrama y decisiones</td><td><code>DECISIONES.md</code> (resumen de una página + diagrama), C4 y 8 ADRs</td></tr>
+        <tr><td>✅ Se evalúa razonamiento, trade-offs y claridad</td><td><code>DECISIONES.md</code> §5 (código vs IA), §11 (trade-offs) y §12 (lo que no se hizo)</td></tr>
+        <tr><td>✅ …y que el agente <b>realmente ejecute el flujo con validaciones</b></td><td>12 escenarios, prueba de humo por HTTP contra Docker, interfaz visual y <code>make eval</code></td></tr>
+        <tr><td>🧑 El diseño, los límites y el criterio tienen que ser del autor</td><td>Sección «Cómo usé IA» del README; los umbrales son supuestos que el autor confirma</td></tr>
+      </table>
+    </div>
+    <p class="sub" style="margin-top:14px">«No buscamos la arquitectura perfecta. Buscamos cómo construís un producto agéntico sobre un problema real acotado, <b>qué priorizás</b> y <b>cómo defendés tus decisiones en código</b>.»</p>
+    <div class="grid g5">
+      <div class="card"><b>1 · Nunca un falso OK</b><p class="small">Gate dentro de la tool + evaluación que falla ante uno solo</p></div>
+      <div class="card"><b>2 · El modelo no mueve dinero</b><p class="small">Propone; el ejecutor valida con 8 defensas</p></div>
+      <div class="card"><b>3 · Corre al clonar</b><p class="small">Sin claves ni red: LLM guionado y mocks declarativos</p></div>
+      <div class="card"><b>4 · Reglas cambiables</b><p class="small">Umbrales en YAML con versión en cada decisión</p></div>
+      <div class="card"><b>5 · Se mide</b><p class="small">Bitácora, métricas, fuzzing y propiedades</p></div>
+    </div>
+  </div>
+
+  <!-- ====================================================== como se usa -->
+  <div class="sec">
+    <h2><span class="n">13</span> Cómo se usa</h2>
+    <p class="sub">Tres formas, todas con los mismos 12 escenarios y sin claves: la <b>interfaz visual</b> (<code>make start</code> → <code>http://localhost:8080</code>), la <b>terminal</b> (<code>make demo</code>) o la <b>API</b> (<code>/docs</code>).</p>
+    <div class="grid g2">
+      <div class="cmd"><i># con Docker: api + mocks + MongoDB + interfaz visual</i><br><b>make start</b>  <i>→ http://localhost:8080</i><br>make stop &nbsp;&nbsp;<i># detener</i><br><br>
+        <i># sin Docker ni red: los 12 escenarios</i><br><b>make demo</b><br>make demo ARGS="--scenario 09 --timeline"</div>
+      <div class="cmd"><i># pruebas, evaluación adversarial y todo junto</i><br><b>make test</b><br><b>make eval</b> &nbsp;<i># falla ante un solo falso OK</i><br><b>make check</b><br><br>
+        <i># probar con un modelo real (la clave no se guarda)</i><br>make smoke-llm ENV_FILE=… SCENARIO=09</div>
+    </div>
+  </div>
+
+  <div class="foot">Auto Equity agéntico · Python 3.12 · FastAPI · LangGraph · MongoDB · el LLM propone, el código dispone</div>
+</div>
+</body>
+</html>

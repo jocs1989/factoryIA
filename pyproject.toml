@@ -44,8 +44,8 @@ python_version = "3.12"
 plugins = ["pydantic.mypy"]
 
 [[tool.mypy.overrides]]
-module = ["langgraph.checkpoint.mongodb"]
-ignore_missing_imports = true   # extra opcional: checkpointer-mongo
+module = ["langgraph.checkpoint.mongodb", "playwright.*"]
+ignore_missing_imports = true   # extras opcionales: checkpointer-mongo y la infografia
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
