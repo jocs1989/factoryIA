@@ -5,7 +5,9 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from domain.facts import validate_facts
 
 
 class Stage(StrEnum):
@@ -55,6 +57,13 @@ class Case(BaseModel):
     # Hechos del caso (customer_id, vehicle_id...), serializables a JSON.
     data: dict[str, Any] = Field(default_factory=dict)
 
+    @field_validator("data")
+    @classmethod
+    def _data_respeta_el_esquema(cls, v: dict[str, Any]) -> dict[str, Any]:
+        """Falla al crear o cargar un caso con claves o tipos inesperados."""
+        validate_facts(v)
+        return v
+
 
 def can_transition(case: Case, to: Stage) -> bool:
     if case.stage is Stage.ESCALATED:
@@ -86,5 +95,10 @@ def transition(
 
 
 def with_data(case: Case, data: dict[str, Any]) -> Case:
-    """Cambia los hechos sin cambiar de etapa; sube la version."""
+    """Cambia los hechos sin cambiar de etapa; sube la version.
+
+    Valida contra `CaseFacts`: una clave mal escrita falla aqui y no se
+    persiste.
+    """
+    validate_facts(data)
     return case.model_copy(update={"data": data, "version": case.version + 1})

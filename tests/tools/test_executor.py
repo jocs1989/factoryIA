@@ -88,7 +88,7 @@ def test_escritura_concurrente_no_pisa_al_otro(
         assert c is not None
         # Otro actor (p. ej. el asesor) guarda entre la lectura y el guardado.
         env.repo.save(
-            with_data(c, {**c.data, "nota": "del asesor"}),
+            with_data(c, {**c.data, "ticket_id": "T-del-asesor"}),
             expected_version=c.version,
         )
         return c
@@ -97,7 +97,9 @@ def test_escritura_concurrente_no_pisa_al_otro(
     r = env.call("check_vehicle_eligibility")
     monkeypatch.undo()
     assert (r.status, r.code) == (ToolStatus.DENIED, "STALE_VERSION")
-    assert env.case().data["nota"] == "del asesor"  # su escritura sobrevive
+    assert (
+        env.case().data["ticket_id"] == "T-del-asesor"
+    )  # su escritura sobrevive
     assert env.case().stage.value == "ELIGIBILITY"  # la nuestra no se aplico
 
 

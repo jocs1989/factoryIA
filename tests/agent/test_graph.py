@@ -204,7 +204,7 @@ def test_invariante_listo_sin_evidencia_del_gate_deja_rastro() -> None:
         Case(
             case_id="c9",
             stage=Stage.READY_FOR_LENDER,
-            data=dict(BASE, case_id="c9"),
+            data={k: v for k, v in BASE.items() if k != "case_id"},
         )
     )
     rt.runner.turn(Session("c9"), CustomerEvent(text="hola"))

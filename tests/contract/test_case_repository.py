@@ -8,7 +8,7 @@ def new_case() -> Case:
     return Case(
         case_id="c1",
         stage=Stage.ELIGIBILITY,
-        data={"customer_id": "cust-001", "income": "20000.00"},
+        data={"customer_id": "cust-001", "declared_income": "20000.00"},
     )
 
 
@@ -71,6 +71,8 @@ def test_el_objeto_guardado_no_se_comparte(
 ) -> None:
     c = new_case()
     case_repo.add(c)
-    c.data["income"] = "999"  # mutar el original no debe afectar lo guardado
+    c.data["declared_income"] = (
+        "999"  # mutar el original no debe afectar lo guardado
+    )
     got = case_repo.get("c1")
-    assert got is not None and got.data["income"] == "20000.00"
+    assert got is not None and got.data["declared_income"] == "20000.00"
