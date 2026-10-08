@@ -1,10 +1,11 @@
 # Atajos del ciclo local. `make check` es lo que debe estar en verde antes
 # de entregar. Todo corre sin red ni credenciales (AGENT_ENV=mock).
 COVERAGE_MIN ?= 85
+DOCSTRINGS_MIN ?= 90
 export AGENT_ENV ?= mock
 PKGS = api config domain adapters tools mocks agent observability cli scripts
 
-.PHONY: sync lint types test eval demo report run mocks-validate mocks-serve \
+.PHONY: sync lint types sast docstrings test eval demo report run mocks-validate mocks-serve \
 	record-llm smoke-llm integration up start stop logs status clean check help
 
 sync:
@@ -16,6 +17,14 @@ lint:
 
 types:
 	uv run mypy $(PKGS) ports.py
+
+# Analisis estatico de seguridad: falla ante hallazgos de severidad media o alta.
+sast:
+	uvx bandit -q -r $(PKGS) -ll
+
+# Compuerta de documentacion: docstrings de la superficie publica.
+docstrings:
+	uv run python -m scripts.check_docstrings --min $(DOCSTRINGS_MIN)
 
 # Reglas, tools, agente, API y CLIs. La evaluacion adversarial va aparte.
 test:
@@ -98,4 +107,4 @@ help:
 	@echo "make demo     12 escenarios sin Docker ni red"
 	@echo "make check    lint + tipos + tests + evaluacion"
 
-check: lint types mocks-validate test eval
+check: lint types sast docstrings mocks-validate test eval
