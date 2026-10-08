@@ -164,6 +164,8 @@ Los marco como supuestos *configurables*, no como verdades del producto.
 | Tasas, bandas, LTV, plazos | tabla ilustrativa (A ≥ 700, B 640–699, C 580–639, D < 580) | `config/profile_policy.yaml` |
 | Domicilio | el de la identificación y el del comprobante deben coincidir con el declarado: código postal exacto y calle igual o parecida (≥ 0.80); no coincide ⇒ pide corrección, no escala (puede haberse mudado) | `config/document_policy.yaml` |
 | Moneda y período del ingreso | solo MXN; el ingreso del comprobante se lleva a mensual (quincenal ×2, semanal ×4.3333) antes de compararlo con el declarado; período desconocido ⇒ corrección | `config/document_policy.yaml` |
+| Bloqueo de verificación | 5 fallos en 15 min bloquean 5 min (temporal) | `api/security.py` |
+| Límite de mensajes | 30 por minuto y sesión | `api/app.py` |
 | Tolerancias de ingreso | ≤ 10 % acepta; 10–25 % pide corrección; > 25 % escala | `config/document_policy.yaml` |
 | Capacidad de pago | cuota ≤ 35 % del ingreso **verificado** | `config/document_policy.yaml` |
 | Vigencias | recibos 60 días, domicilio 90, identificación no vencida | `config/document_policy.yaml` |
@@ -182,7 +184,9 @@ Los marco como supuestos *configurables*, no como verdades del producto.
 - **Caso equivocado.** La sesión se liga a un `case_id` tras verificar
   identidad (últimos 4 del teléfono); el ejecutor rechaza cualquier tool con
   otro `case_id`. El error de verificación es idéntico exista o no el caso, y
-  hay bloqueo tras 5 intentos.
+  hay un bloqueo **temporal** tras 5 fallos (uno permanente permitiría dejar
+  fuera al cliente legítimo). Las sesiones vencen y el almacén tiene tope; hay
+  un límite de 30 mensajes por minuto y sesión (ADR-0006).
 - **Documentos.** Se ligan por hash. Un comprobante de otra persona se
   **bloquea (no se liga)** y se escala. No se muestran datos personales antes
   de verificar identidad.
@@ -193,6 +197,9 @@ Los marco como supuestos *configurables*, no como verdades del producto.
   detector marca el contenido sospechoso como evidencia (`SUSPICIOUS_CONTENT`
   ⇒ escala). El detector es heurístico: **no es la defensa principal**; lo es
   que el gate decide en código.
+- **Operación.** La configuración insegura de producción no arranca; sin
+  bitácora no se opera; cada petición lleva un `X-Correlation-ID` y los logs
+  redactan CURP, RFC, correo, teléfonos y credenciales (ADR-0006).
 - **Privacidad.** La bitácora guarda hashes, nunca valores. Al LLM solo va la
   proyección sin datos personales. Secretos solo por entorno.
 - **Escalada.** `escalate_to_human` crea un ticket y el grafo se **pausa**
@@ -239,6 +246,18 @@ y comprueba que la evaluación se pone en rojo.
 Un falso OK cuesta más que un falso rechazo; por eso los umbrales son
 conservadores y cualquier duda ⇒ corrección o escalada, nunca OK.
 
+**Límite de esa evaluación, dicho sin rodeos:** el set lo etiqueté yo con
+fixtures míos, así que "0 falsos OK" vale sobre ese set. Por eso hay dos capas
+más que no dependen de mi imaginación (ADR-0008): **pruebas de propiedades**
+con `hypothesis` (la cuota nunca baja al subir la tasa, el tope LTV incluye la
+llave, menos ingreso comprobado nunca es mejor veredicto...) y **fuzzing** en
+el que el azar elige acciones, argumentos, principals e incluso lo que
+responde el "modelo". Sus invariantes: sin excepciones, los estados terminales
+no cambian, todo caso en `READY_FOR_LENDER` pasa el gate recalculado desde
+cero, las etapas son alcanzables por aristas permitidas y el esquema se
+cumple. Las propiedades encontraron un bug real. Nada de esto mide la calidad
+conversacional de un modelo real: para eso está `make smoke-llm`.
+
 ## 10. Sistema vivo: cómo se adopta sin romper nada
 
 1. **Sombra:** el agente propone y registra; el humano ejecuta; se mide la
@@ -268,21 +287,63 @@ un catálogo de mocks validado (`make mocks-validate`).
 
 - **Qué sí y qué no se ejecutó contra servicios reales.** MongoDB real:
   `make integration` pasa contra `mongo:7` (10 pruebas) y la pila de
-  `docker compose` se levantó y se recorrió una conversación completa.
-  **Azure OpenAI se ejercitó con un modelo real** (`gpt-5.4-mini`): los
-  escenarios 1, 5 y 9 terminaron en el desenlace esperado, con el 100 % de
-  las decisiones tomadas por el modelo y ninguna caída a reglas
-  (`make smoke-llm`). Los adaptadores de OpenAI directo, Gemini, DeepSeek y
-  Anthropic solo se probaron contra transportes simulados con el formato
-  documentado de cada API; sus nombres de modelo por defecto deben
-  verificarse.
-- **Sesiones y bloqueo por intentos en memoria** de un proceso: con varias
-  réplicas hacen falta Redis o Mongo con TTL.
+  `docker compose` se levantó y se recorrió con una prueba de humo HTTP y con
+  un navegador. **Azure OpenAI se ejercitó con un modelo real**
+  (`gpt-5.4-mini`): los escenarios 1, 5 y 9 terminaron en el desenlace
+  esperado, con el 100 % de las decisiones tomadas por el modelo y ninguna
+  caída a reglas (`make smoke-llm`). Los adaptadores de OpenAI directo,
+  Gemini, DeepSeek y Anthropic solo se probaron contra transportes simulados
+  con el formato documentado de cada API; sus nombres de modelo por defecto
+  deben verificarse. **El workflow de CI no se ha ejecutado en GitHub**: cada
+  paso se probó por separado.
+- **Calidad conversacional de un modelo real:** solo tres escenarios con un
+  modelo. Ni el fuzzing ni la evaluación miden eso (ADR-0008).
+- **Rendimiento:** un proceso atiende ~3 conversaciones/s con la política por
+  reglas y más concurrencia solo sube la latencia (GIL). No se probó carga con
+  un LLM real (`docs/architecture/NFR.md`).
+- **Sesiones, bloqueo y límite de tasa en memoria de un proceso.** Ya tienen
+  vencimiento, purga y tope (ADR-0006), pero con varias réplicas hacen falta
+  Redis o Mongo con TTL. Es el requisito previo para escalar.
 - **Datos personales en `Case.data` sin cifrar en reposo** (nombre, ingreso,
-  últimos 4 dígitos). En producción: cifrado a nivel de campo y retención.
+  últimos 4 dígitos). En producción: cifrado a nivel de campo y retención. La
+  bitácora no tiene política de retención.
+- **Verificación de identidad débil:** los últimos 4 dígitos del teléfono son
+  un espacio de 10 000 valores. El bloqueo temporal frena la fuerza bruta,
+  pero no sustituye un segundo factor.
 - **Sin OCR real**, sin doble extracción con modelos distintos para medir
-  desacuerdo, sin verificación real de la segunda llave, sin CAT ni IVA, sin
-  mensajería real (WhatsApp) ni panel web para el asesor.
+  desacuerdo, sin verificación real de la segunda llave, sin CAT ni IVA y sin
+  mensajería real (WhatsApp). La interfaz web es de **prueba local**: inyecta
+  las credenciales de canal y de asesor.
+- **Infraestructura:** solo `docker-compose`. Sin IaC (Terraform), etiquetado,
+  Multi-AZ, DAST, trazas distribuidas ni métricas en vivo.
 - **Evaluación con LLM como juez** del resumen para el asesor: no hecha.
-- **Límite de tasa** en la API y autenticación del asesor más allá de una API
-  key (SSO, MFA): pendientes.
+- **Autenticación del asesor** más allá de una API key (SSO, MFA): pendiente.
+- **Historial de git:** los 15 commits anteriores a ADR-0006 llevan
+  `Co-authored-by`, que el estándar de la organización prohíbe. Quitarlo exige
+  `push --force`; queda pendiente de aprobación explícita.
+
+## 13. Qué cambió tras una auditoría interna
+
+A petición del autor se auditó el repositorio contra lo que se esperaría de un
+arquitecto senior (la hizo la misma herramienta de IA que ayudó a construirlo:
+es una autocrítica, no una revisión independiente). Lo que encontró, y qué se
+hizo, con el ADR que lo explica:
+
+| Hallazgo | Acción | Dónde |
+|---|---|---|
+| `Case.data` era un dict sin esquema | `CaseFacts` con `extra="forbid"` al escribir y cargar | ADR-0007 |
+| `catalog.py` de 1 076 líneas | un handler por etapa en `tools/handlers/` | `tools/` |
+| La evaluación la escribí yo | propiedades (`hypothesis`) y fuzzing con un LLM caótico, con semillas nuevas | ADR-0008 |
+| "Ambas políticas dan lo mismo" era circular | se declara el límite y se agregó `make smoke-llm` con un modelo real | ADR-0008 |
+| El bloqueo permitía dejar fuera al cliente legítimo | bloqueo temporal con `Retry-After` | ADR-0006 |
+| Sesiones sin purga | `SessionStore` con vencimiento y tope | ADR-0006 |
+| `adapters/` importaba `mocks/` | cableado movido a `mocks/wiring.py` + prueba de arquitectura | `adapters/providers.py` |
+| `float` en el texto al cliente | `Decimal` | `agent/policy_rules.py` |
+| Sin reintento con backoff | `RetryingLLM` | `adapters/llm/retry.py` |
+| 16 % de docstrings | 100 % y compuerta en CI | `make docstrings` |
+| Sin CHANGELOG, SLOs ni NFR | `CHANGELOG.md`, `docs/runbooks/OPERACION.md`, `docs/architecture/NFR.md` | `docs/` |
+| Sin SAST, humo ni permisos mínimos en CI | bandit, job `smoke`, `permissions: read` | `.github/workflows/ci.yml` |
+
+Además, el propio endurecimiento descubrió defectos reales: nombres con letras
+fuera del latín básico que no coincidían consigo mismos, y un `/ready` que
+decía "listo" mientras toda conversación daba 500.
