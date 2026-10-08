@@ -35,6 +35,7 @@ class SessionStore:
 
     @property
     def ttl_s(self) -> float:
+        """Vigencia de una sesion, en segundos."""
         return self._ttl
 
     def __len__(self) -> int:
@@ -105,6 +106,10 @@ class AttemptLimiter:
         return int(left) + 1
 
     def record_failure(self, key: str) -> None:
+        """Anota un fallo.
+
+        Al llegar al maximo en la ventana, bloquea temporalmente.
+        """
         now = self._clock()
         hits = self._failures.setdefault(key, deque())
         hits.append(now)
@@ -114,6 +119,7 @@ class AttemptLimiter:
             self._locked_until[key] = now + self._lock
 
     def reset(self, key: str) -> None:
+        """Olvida los fallos y el bloqueo de la clave (tras un acierto)."""
         self._failures.pop(key, None)
         self._locked_until.pop(key, None)
 
@@ -136,6 +142,7 @@ class RateLimiter:
         self._hits: dict[str, deque[float]] = {}
 
     def allow(self, key: str) -> bool:
+        """True si la clave aun no agota su cupo en la ventana."""
         now = self._clock()
         hits = self._hits.setdefault(key, deque())
         while hits and hits[0] <= now - self._per:

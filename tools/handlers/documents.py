@@ -77,11 +77,15 @@ DOC_TYPES = frozenset(CRITICAL_FIELDS)
 
 
 class AttachIn(ToolInput):
+    """Documento a ligar; el id solo admite caracteres seguros."""
+
     doc_id: str = Field(pattern=r"^[A-Za-z0-9_.-]{1,64}$")
     doc_type: str
 
 
 class AttachOut(BaseModel):
+    """Resultado de ligar un documento."""
+
     doc_type: str
     doc_id: str
     accepted: bool
@@ -91,16 +95,22 @@ class AttachOut(BaseModel):
 
 
 class ReadDocIn(ToolInput):
+    """Tipo de documento a consultar."""
+
     doc_type: str
 
 
 class ReadDocOut(BaseModel):
+    """Campos estructurados de un documento, nunca su texto crudo."""
+
     doc_type: str
     fields: dict[str, dict[str, str]]
     flags: list[str]
 
 
 class ValidationOut(BaseModel):
+    """Resultado de la validacion documental."""
+
     outcome: str
     missing: list[str]
     findings: list[dict[str, Any]]
@@ -108,11 +118,17 @@ class ValidationOut(BaseModel):
 
 
 class CorrectionOut(BaseModel):
+    """Mensaje de correccion y si se entrego por el canal."""
+
     message: str
     delivered: bool
 
 
 def attach_document(ctx: ToolContext, inp: AttachIn) -> Outcome:
+    """Liga un documento por hash.
+
+    Uno de otra persona se bloquea y se escala.
+    """
     if inp.doc_type not in DOC_TYPES:
         raise ToolRefusal(
             "UNKNOWN_DOC_TYPE", f"tipo no soportado: {inp.doc_type}"
@@ -187,6 +203,7 @@ def attach_document(ctx: ToolContext, inp: AttachIn) -> Outcome:
 
 
 def read_document(ctx: ToolContext, inp: ReadDocIn) -> Outcome:
+    """Devuelve los campos extraidos de un documento ya ligado."""
     doc = (ctx.case.data.get("documents") or {}).get(inp.doc_type)
     if doc is None:
         raise ToolRefusal(
@@ -210,6 +227,7 @@ def _findings(review: DocumentReview) -> list[dict[str, Any]]:
 
 
 def run_document_validations(ctx: ToolContext, inp: CaseOnlyIn) -> Outcome:
+    """Revisa el expediente y mueve el caso segun el resultado."""
     review = review_case(ctx.case, ctx.deps)
     d = copy_data(ctx.case)
     d["verified_income"] = (
@@ -262,6 +280,7 @@ def run_document_validations(ctx: ToolContext, inp: CaseOnlyIn) -> Outcome:
 
 
 def request_customer_correction(ctx: ToolContext, inp: CaseOnlyIn) -> Outcome:
+    """Redacta la correccion pendiente y la envia por el canal."""
     pending = ctx.case.data.get("open_corrections") or []
     if not pending:
         raise ToolRefusal("NOTHING_TO_CORRECT", "no hay correcciones abiertas")

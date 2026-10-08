@@ -9,6 +9,7 @@ from ports import AuditEvent
 
 
 def load_events(path: Path) -> list[AuditEvent]:
+    """Eventos de un archivo JSONL; vacio si no existe."""
     if not path.exists():
         return []
     return [
@@ -19,6 +20,7 @@ def load_events(path: Path) -> list[AuditEvent]:
 
 
 def by_case(events: Iterable[AuditEvent]) -> dict[str, list[AuditEvent]]:
+    """Agrupa los eventos por caso."""
     grouped: dict[str, list[AuditEvent]] = {}
     for e in events:
         grouped.setdefault(e.case_id, []).append(e)

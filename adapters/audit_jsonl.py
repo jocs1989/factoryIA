@@ -1,3 +1,5 @@
+"""Bitacora de decisiones en un archivo JSONL (una linea por evento)."""
+
 from __future__ import annotations
 
 import threading
@@ -15,11 +17,13 @@ class JsonlAudit:
         path.parent.mkdir(parents=True, exist_ok=True)
 
     def record(self, event: AuditEvent) -> None:
+        """Agrega una linea al archivo; es la unica escritura permitida."""
         line = event.model_dump_json()
         with self._lock, self._path.open("a", encoding="utf-8") as f:
             f.write(line + "\n")
 
     def list_events(self, case_id: str) -> list[AuditEvent]:
+        """Eventos del caso en el orden en que se registraron."""
         if not self._path.exists():
             return []
         events = (

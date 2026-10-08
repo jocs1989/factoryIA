@@ -55,6 +55,8 @@ _STATUS = {
 
 
 class CaseCreate(BaseModel):
+    """Datos para abrir un caso; los aporta el canal, no el cliente."""
+
     model_config = ConfigDict(extra="forbid")
 
     case_id: str | None = None
@@ -70,10 +72,14 @@ class CaseCreate(BaseModel):
 
 
 class VerifyIn(BaseModel):
+    """Verificacion de identidad: ultimos cuatro digitos del telefono."""
+
     phone_last4: str = Field(pattern=r"^\d{4}$")
 
 
 class MessageIn(BaseModel):
+    """Un mensaje del cliente, con sus documentos adjuntos (acotado)."""
+
     model_config = ConfigDict(extra="forbid")
 
     text: str = Field(default="", max_length=2000)
@@ -81,6 +87,8 @@ class MessageIn(BaseModel):
 
 
 class ResolveIn(BaseModel):
+    """Resolucion de un ticket por el asesor, con justificacion obligatoria."""
+
     model_config = ConfigDict(extra="forbid")
 
     case_id: str
@@ -102,6 +110,11 @@ def _http_error(result: ToolResult) -> HTTPException:
 
 
 def create_app(runtime: Runtime | None = None) -> FastAPI:
+    """Crea la API.
+
+    Arrancar valida la configuracion y se niega si es insegura.
+    """
+
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         rt_ = runtime or build_runtime(load_settings())

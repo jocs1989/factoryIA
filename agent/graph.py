@@ -99,6 +99,11 @@ REJECT_TEXT = {
 
 
 class AgentState(TypedDict, total=False):
+    """Estado efimero del grafo en un turno.
+
+    La verdad del caso vive en el repositorio.
+    """
+
     case_id: str
     run_id: str
     event: dict[str, Any] | None
@@ -115,6 +120,11 @@ class AgentState(TypedDict, total=False):
 
 @dataclass(frozen=True)
 class GraphDeps:
+    """Dependencias del grafo.
+
+    Ejecutor, repositorio, bitacora, politica y topes.
+    """
+
     executor: Executor
     repo: CaseRepositoryPort
     audit: AuditPort
@@ -135,6 +145,11 @@ def _final_text(case_data: dict[str, Any], stage: Stage) -> str:
 
 
 def build_graph(deps: GraphDeps, checkpointer: Any = None) -> Any:
+    """Compila el grafo LangGraph.
+
+    Relee el caso, elige una accion y ejecuta; el dominio decide la etapa.
+    """
+
     def case_stage(state: AgentState) -> Stage:
         case = deps.repo.get(state["case_id"])
         if case is None:

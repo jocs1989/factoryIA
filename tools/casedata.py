@@ -21,11 +21,13 @@ PAYMENT_TERMS_KEY = "chosen"
 
 
 def money_of(data: dict[str, Any], key: str) -> Decimal | None:
+    """Monto guardado como texto en el caso, o None."""
     raw = data.get(key)
     return None if raw in (None, "") else Decimal(str(raw))
 
 
 def stored_facts(data: dict[str, Any]) -> dict[str, DocFacts]:
+    """Documentos del caso como hechos tipados para la revision."""
     out: dict[str, DocFacts] = {}
     for doc_type, d in (data.get("documents") or {}).items():
         out[doc_type] = DocFacts(
@@ -76,11 +78,16 @@ def fresh_option(case: Case) -> SimulationOption | None:
 
 
 def fresh_chosen_hash(case: Case) -> str | None:
+    """Hash de la opcion elegida recalculado desde sus insumos.
+
+    Detecta alteraciones.
+    """
     option = fresh_option(case)
     return _simulation_hash(option) if option else None
 
 
 def review_case(case: Case, deps: Deps) -> DocumentReview:
+    """Revision documental de un caso, recalculada desde cero."""
     data = case.data
     option = fresh_option(case)
     return review_documents(

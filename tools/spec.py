@@ -15,6 +15,8 @@ from tools.principals import Principal
 
 
 class Effect(StrEnum):
+    """Efecto de una tool sobre el sistema."""
+
     READ = "read"
     COMPUTE = "compute"
     WRITE = "write"
@@ -22,11 +24,15 @@ class Effect(StrEnum):
 
 
 class Risk(StrEnum):
+    """Riesgo de una tool; las de riesgo alto tienen controles extra."""
+
     LOW = "low"
     HIGH = "high"
 
 
 class ToolInput(BaseModel):
+    """Base de las entradas: rechaza campos no declarados."""
+
     model_config = ConfigDict(extra="forbid")
 
     case_id: str
@@ -50,6 +56,8 @@ class ToolRefusal(Exception):
 
 @dataclass(frozen=True)
 class ToolContext:
+    """Lo que recibe un handler: el caso, quien llama y las dependencias."""
+
     case: Case
     principal: Principal
     deps: Deps
@@ -57,6 +65,11 @@ class ToolContext:
 
 @dataclass
 class Outcome:
+    """Resultado de un handler.
+
+    Salida, caso nuevo a persistir y efectos tras el commit.
+    """
+
     output: BaseModel
     case: Case | None = None  # se persiste con version optimista
     rule_version: str | None = None
@@ -69,6 +82,11 @@ Handler = Callable[[ToolContext, Any], Outcome]
 
 @dataclass(frozen=True)
 class ToolSpec:
+    """Contrato de una tool.
+
+    Modelos, permiso, etapas, riesgo e idempotencia.
+    """
+
     name: str
     description: str
     input_model: type[ToolInput]

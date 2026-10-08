@@ -17,6 +17,11 @@ JsonDict = dict[str, Any]
 
 
 class HttpLLM(ABC):
+    """Base de los proveedores HTTP.
+
+    Cada uno solo arma la peticion y lee la respuesta.
+    """
+
     name: str
 
     def __init__(
@@ -46,6 +51,7 @@ class HttpLLM(ABC):
         """Convierte la respuesta del proveedor al formato comun."""
 
     def complete(self, request: LLMRequest) -> LLMResponse:
+        """Envia la peticion; traduce los fallos HTTP a `LLMError`."""
         url, headers, payload = self._build(request)
         try:
             res = self._client.post(url, headers=headers, json=payload)

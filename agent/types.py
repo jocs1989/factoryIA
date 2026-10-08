@@ -13,6 +13,8 @@ from tools.spec import ToolSpec
 
 
 class DocRef(BaseModel):
+    """Documento que el cliente adjunta en un turno."""
+
     model_config = ConfigDict(frozen=True)
 
     doc_id: str
@@ -29,6 +31,11 @@ class CustomerEvent(BaseModel):
 
 
 class ToolCall(BaseModel):
+    """Accion: invocar una tool.
+
+    El `case_id` lo fija el sistema, no el modelo.
+    """
+
     model_config = ConfigDict(frozen=True)
 
     tool: str
@@ -47,6 +54,11 @@ Action = ToolCall | Reply
 
 @dataclass(frozen=True)
 class StageView:
+    """Lo unico que ve la politica.
+
+    Etapa, proyeccion sin PII y tools permitidas.
+    """
+
     case_id: str
     run_id: str
     stage: Stage
@@ -64,4 +76,5 @@ class Policy:
     name = "policy"
 
     def next_action(self, view: StageView) -> Action:
+        """Devuelve la siguiente accion; el ejecutor la validara."""
         raise NotImplementedError

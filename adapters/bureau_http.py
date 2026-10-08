@@ -1,3 +1,5 @@
+"""Cliente HTTP del Buro de Credito que normaliza su reporte."""
+
 from __future__ import annotations
 
 from adapters.http_client import ProviderClient
@@ -14,6 +16,7 @@ class HttpBureau:
         self._http = http
 
     def query(self, customer_id: str) -> BureauProfile:
+        """Consulta al cliente; devuelve solo el perfil normalizado."""
         raw = self._http.post(
             "/api/bureau/query", {"customer_id": customer_id}
         )

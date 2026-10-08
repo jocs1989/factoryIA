@@ -12,11 +12,15 @@ RULE_VERSION = "1.0.0"
 
 
 class ReadinessStatus(StrEnum):
+    """El expediente esta listo o no."""
+
     OK = "OK"
     NOT_READY = "NOT_READY"
 
 
 class ReadinessInputs(BaseModel):
+    """Hechos que el gate evalua; los calcula quien lo invoca, no el agente."""
+
     model_config = ConfigDict(frozen=True)
 
     eligibility_ok: bool
@@ -32,6 +36,8 @@ class ReadinessInputs(BaseModel):
 
 
 class ReadinessDecision(BaseModel):
+    """Decision del gate: cada chequeo, bloqueos y huella de sus entradas."""
+
     model_config = ConfigDict(frozen=True)
 
     status: ReadinessStatus
@@ -42,6 +48,10 @@ class ReadinessDecision(BaseModel):
 
 
 def evaluate_readiness(inputs: ReadinessInputs) -> ReadinessDecision:
+    """Gate 'listo para financiera': OK solo si pasan los 9 chequeos.
+
+    Ante la duda, no.
+    """
     chosen, current = (
         inputs.chosen_simulation_hash,
         inputs.current_simulation_hash,

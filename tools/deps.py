@@ -22,11 +22,14 @@ from ports import (
 
 
 def utc_now() -> datetime:
+    """Hora actual en UTC."""
     return datetime.now(UTC)
 
 
 @dataclass(frozen=True)
 class Deps:
+    """Puertos y politicas versionadas que reciben las tools."""
+
     repo: CaseRepositoryPort
     inbox: InboxPort
     audit: AuditPort
@@ -42,4 +45,5 @@ class Deps:
 
     @property
     def today(self) -> date:
+        """Fecha de hoy segun el reloj inyectado."""
         return self.clock().date()

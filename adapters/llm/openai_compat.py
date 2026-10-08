@@ -7,6 +7,8 @@ from ports import LLMRequest, LLMResponse
 
 
 class OpenAICompatLLM(HttpLLM):
+    """Estrategia del protocolo Chat Completions (OpenAI y compatibles)."""
+
     name = "openai"
 
     def _build(
@@ -41,4 +43,6 @@ class OpenAICompatLLM(HttpLLM):
 
 
 class DeepSeekLLM(OpenAICompatLLM):
+    """DeepSeek habla el mismo protocolo que OpenAI con otra URL."""
+
     name = "deepseek"

@@ -24,19 +24,27 @@ from tools.spec import (
 
 
 class QuoteOut(BaseModel):
+    """Costo cotizado de la segunda llave."""
+
     second_key_cost: str
 
 
 class ConsentIn(ToolInput):
+    """Autorizacion para consultar el Buro y su evidencia."""
+
     consent: bool
     evidence: str = Field(default="", max_length=500)
 
 
 class ConsentOut(BaseModel):
+    """Confirma que se registro el consentimiento."""
+
     recorded: bool
 
 
 class ProfileOut(BaseModel):
+    """Perfil resultante; nunca el score ni el reporte."""
+
     status: str
     band: str | None
     profile: str | None
@@ -47,6 +55,7 @@ class ProfileOut(BaseModel):
 
 
 def quote_second_key(ctx: ToolContext, inp: CaseOnlyIn) -> Outcome:
+    """Cotiza la llave (solo si falta); su costo se suma al plan."""
     d = copy_data(ctx.case)
     if not (d.get("eligibility") or {}).get("needs_second_key_quote"):
         raise ToolRefusal(
@@ -61,6 +70,7 @@ def quote_second_key(ctx: ToolContext, inp: CaseOnlyIn) -> Outcome:
 
 
 def record_bureau_consent(ctx: ToolContext, inp: ConsentIn) -> Outcome:
+    """Registra la autorizacion expresa; sin ella no se consulta el Buro."""
     if not inp.consent:
         raise ToolRefusal(
             "CONSENT_NOT_GIVEN", "sin autorizacion no se consulta"
@@ -75,6 +85,7 @@ def record_bureau_consent(ctx: ToolContext, inp: ConsentIn) -> Outcome:
 
 
 def query_credit_bureau(ctx: ToolContext, inp: CaseOnlyIn) -> Outcome:
+    """Consulta el Buro con consentimiento; guarda solo la decision."""
     d = copy_data(ctx.case)
     if not (d.get("bureau_consent") or {}).get("given"):
         raise ToolRefusal(

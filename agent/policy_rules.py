@@ -25,9 +25,12 @@ def _money(value: str) -> str:
 
 
 class RuleBasedPolicy(Policy):
+    """Politica determinista sin LLM; tambien es el respaldo de `LLMPolicy`."""
+
     name = "rules"
 
     def next_action(self, view: StageView) -> Action:
+        """Siguiente accion segun la etapa y lo que dijo el cliente."""
         handler = {
             Stage.ELIGIBILITY: self._eligibility,
             Stage.PROFILING: self._profiling,

@@ -1,3 +1,5 @@
+"""Canal en memoria que guarda lo enviado, para pruebas y demo."""
+
 from __future__ import annotations
 
 
@@ -8,5 +10,6 @@ class MemoryChannel:
         self.sent: list[tuple[str, str]] = []
 
     def send(self, case_id: str, text: str) -> str:
+        """Registra el mensaje y devuelve un id secuencial."""
         self.sent.append((case_id, text))
         return f"msg-mem-{len(self.sent):04d}"

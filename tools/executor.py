@@ -30,6 +30,8 @@ from tools.spec import Outcome, ToolContext, ToolRefusal, ToolSpec
 
 
 class ToolStatus(StrEnum):
+    """Resultado de una llamada: ok, denegada, invalida o con error."""
+
     OK = "ok"
     DENIED = "denied"
     INVALID = "invalid"
@@ -37,6 +39,8 @@ class ToolStatus(StrEnum):
 
 
 class ToolResult(BaseModel):
+    """Resultado de una tool, tambien cuando se niega."""
+
     status: ToolStatus
     tool: str
     output: dict[str, Any] | None = None
@@ -49,16 +53,20 @@ class ToolResult(BaseModel):
 
     @property
     def ok(self) -> bool:
+        """True si la tool se ejecuto."""
         return self.status is ToolStatus.OK
 
 
 class Executor:
+    """Unico camino para ejecutar tools, tanto del agente como del asesor."""
+
     def __init__(self, deps: Deps, catalog: Mapping[str, ToolSpec]) -> None:
         self._deps = deps
         self._catalog = catalog
 
     @property
     def catalog(self) -> Mapping[str, ToolSpec]:
+        """Tools registradas."""
         return self._catalog
 
     def call(
@@ -70,6 +78,10 @@ class Executor:
         *,
         run_id: str = "run",
     ) -> ToolResult:
+        """Ejecuta una tool.
+
+        Valida entrada, permiso, caso, idempotencia y etapa, y siempre audita.
+        """
         t0 = time.perf_counter()
         spec = self._catalog.get(tool_name)
         inputs_hash = canonical_hash(dict(args))

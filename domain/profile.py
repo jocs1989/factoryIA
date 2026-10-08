@@ -13,12 +13,16 @@ SCORE_MIN, SCORE_MAX = 400, 850
 
 
 class ProfileStatus(StrEnum):
+    """Veredicto del perfil: aprobado, declinado o escalar."""
+
     APPROVED = "APPROVED"
     DECLINED = "DECLINED"
     ESCALATE = "ESCALATE"
 
 
 class Band(BaseModel):
+    """Una banda de score con sus condiciones."""
+
     model_config = ConfigDict(frozen=True)
 
     band: str
@@ -29,6 +33,8 @@ class Band(BaseModel):
 
 
 class ProfilePolicy(BaseModel):
+    """Tabla de decision del perfil, versionada."""
+
     model_config = ConfigDict(frozen=True)
 
     version: str
@@ -47,6 +53,8 @@ class BureauProfile(BaseModel):
 
 
 class ProfileDecision(BaseModel):
+    """Decision de perfil con condiciones, motivos y version de la regla."""
+
     model_config = ConfigDict(frozen=True)
 
     status: ProfileStatus
@@ -59,6 +67,7 @@ class ProfileDecision(BaseModel):
 
 
 def load_profile_policy(path: Path) -> ProfilePolicy:
+    """Carga la tabla de perfil, con las bandas de mayor a menor score."""
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     # Las bandas se evaluan de mayor a menor score minimo.
     data["bands"] = sorted(
@@ -70,6 +79,11 @@ def load_profile_policy(path: Path) -> ProfilePolicy:
 def evaluate_profile(
     policy: ProfilePolicy, bureau: BureauProfile
 ) -> ProfileDecision:
+    """Score a perfil.
+
+    La morosidad es un bloqueo duro y un dato dudoso escala.
+    """
+
     def out(status: ProfileStatus, *codes: str) -> ProfileDecision:
         return ProfileDecision(
             status=status, reason_codes=codes, rule_version=policy.version

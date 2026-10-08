@@ -27,11 +27,15 @@ LLM_DIR = Path("mocks/llm_responses")
 
 
 class Checkpoint(BaseModel):
+    """Etapa esperada tras un turno concreto del escenario."""
+
     after_turn: int
     stage: str
 
 
 class Expected(BaseModel):
+    """Desenlace esperado de un escenario."""
+
     stage: str
     reason_codes: list[str] = Field(default_factory=list)
     adversarial: bool = False
@@ -41,11 +45,18 @@ class Expected(BaseModel):
 
 
 class LlmSpec(BaseModel):
+    """Guion del LLM de un escenario y, opcionalmente, cuando falla."""
+
     script: str | None = None
     fail_after: int | None = None
 
 
 class Scenario(BaseModel):
+    """Un escenario reproducible.
+
+    Caso, turnos del cliente y desenlace esperado.
+    """
+
     id: str
     title: str
     case: dict[str, Any]
@@ -55,6 +66,7 @@ class Scenario(BaseModel):
 
 
 def load_scenarios(directory: Path = SCENARIOS_DIR) -> list[Scenario]:
+    """Carga los escenarios JSON de un directorio, ordenados por nombre."""
     return [
         Scenario.model_validate_json(p.read_text(encoding="utf-8"))
         for p in sorted(directory.glob("*.json"))
@@ -71,6 +83,7 @@ class RecordingPolicy(Policy):
         self.script: list[str] = []
 
     def next_action(self, view: StageView) -> Action:
+        """Delega en la politica interna y anota la decision."""
         action = self._inner.next_action(view)
         raw: dict[str, Any]
         if isinstance(action, Reply):
@@ -84,6 +97,11 @@ class RecordingPolicy(Policy):
 
 @dataclass
 class TurnLog:
+    """Un turno ocurrido.
+
+    Lo que dijo el cliente, lo que respondio el agente y la etapa.
+    """
+
     customer: str
     messages: list[str]
     stage: str
@@ -91,6 +109,8 @@ class TurnLog:
 
 @dataclass
 class ScenarioResult:
+    """Resultado de correr un escenario, con sus problemas si no cumple."""
+
     scenario: Scenario
     policy: str
     final_stage: str
@@ -101,14 +121,17 @@ class ScenarioResult:
 
     @property
     def passed(self) -> bool:
+        """True si el escenario termino como se esperaba."""
         return not self.problems
 
     @property
     def degraded(self) -> bool:
+        """True si el LLM fallo y se uso la politica por reglas."""
         return any(e.type == "llm" and e.outcome != "ok" for e in self.events)
 
     @property
     def denied_tools(self) -> list[str]:
+        """Tools que el ejecutor nego durante el escenario."""
         return [
             e.name
             for e in self.events
@@ -131,6 +154,7 @@ def run_scenario(
     script_override: list[str] | None = None,
     llm: LLMPort | None = None,
 ) -> ScenarioResult:
+    """Corre un escenario con la politica dada y compara con lo esperado."""
     cfg = _settings(policy, settings)
     if policy == "llm" and llm is None:
         if script_override is not None:

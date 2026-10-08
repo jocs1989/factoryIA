@@ -24,6 +24,11 @@ from ports import LLMError, LLMPort
 
 @dataclass(frozen=True)
 class ProviderSpec:
+    """Datos para crear un proveedor.
+
+    Clase, variable de la clave, modelo y URL.
+    """
+
     cls: type[HttpLLM]
     key_env: str
     default_model: str

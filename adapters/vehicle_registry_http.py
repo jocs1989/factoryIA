@@ -1,3 +1,5 @@
+"""Cliente HTTP del registro de vehiculos."""
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -8,10 +10,16 @@ from ports import VehicleRecord
 
 
 class HttpVehicleRegistry:
+    """Consulta titularidad, gravamenes y segunda llave de un vehiculo."""
+
     def __init__(self, http: ProviderClient) -> None:
         self._http = http
 
     def get_vehicle(self, vehicle_id: str, customer_id: str) -> VehicleRecord:
+        """Hechos del vehiculo.
+
+        Un dato que el registro no sabe queda en None.
+        """
         raw = self._http.post(
             "/api/vehicles/get",
             {"vehicle_id": vehicle_id, "customer_id": customer_id},

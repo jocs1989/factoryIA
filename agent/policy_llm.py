@@ -35,6 +35,7 @@ class ActionError(ValueError):
 
 
 def load_prompt(stage: str) -> str:
+    """Prompt del sistema mas el de la etapa."""
     system = (PROMPTS / "system.md").read_text(encoding="utf-8")
     extra = PROMPTS / f"{stage}.md"
     if extra.exists():
@@ -43,6 +44,10 @@ def load_prompt(stage: str) -> str:
 
 
 def build_request(view: StageView) -> LLMRequest:
+    """Arma la peticion.
+
+    Contexto sin PII y el mensaje del cliente delimitado como dato.
+    """
     last = None
     if view.last is not None:
         last = {
@@ -79,6 +84,7 @@ def build_request(view: StageView) -> LLMRequest:
 
 
 def parse_action(text: str, view: StageView) -> Action:
+    """Convierte la respuesta del modelo en accion; si no, `ActionError`."""
     try:
         raw: Any = json.loads(_FENCE.sub("", text.strip()))
     except ValueError as exc:
@@ -110,6 +116,8 @@ def parse_action(text: str, view: StageView) -> Action:
 
 
 class LLMPolicy(Policy):
+    """Politica que deja proponer al modelo y cae a reglas si falla."""
+
     name = "llm"
 
     def __init__(
@@ -130,6 +138,10 @@ class LLMPolicy(Policy):
         self.degraded: set[str] = set()
 
     def next_action(self, view: StageView) -> Action:
+        """Accion propuesta por el modelo.
+
+        Ante error, respuesta invalida o circuito abierto decide la regla.
+        """
         if self._failures.get(view.case_id, 0) >= self._max:
             self._note(view, "circuit_open", 0)
             self.degraded.add(view.case_id)

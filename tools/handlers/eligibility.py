@@ -21,10 +21,17 @@ from tools.spec import (
 
 
 class CheckEligibilityIn(ToolInput):
+    """Entrada de elegibilidad.
+
+    La llave declarada solo llena lo que el registro no sabe.
+    """
+
     declared_second_key: bool | None = None
 
 
 class EligibilityOut(BaseModel):
+    """Veredicto de elegibilidad y etapa resultante."""
+
     status: str
     reason_codes: list[str]
     missing: list[str]
@@ -35,6 +42,7 @@ class EligibilityOut(BaseModel):
 def check_vehicle_eligibility(
     ctx: ToolContext, inp: CheckEligibilityIn
 ) -> Outcome:
+    """Consulta el registro y el dominio calcula el veredicto."""
     d = copy_data(ctx.case)
     record = ctx.deps.vehicles.get_vehicle(
         str(d["vehicle_id"]), str(d["customer_id"])

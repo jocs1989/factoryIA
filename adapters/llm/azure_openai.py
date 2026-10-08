@@ -19,6 +19,8 @@ from ports import LLMError, LLMRequest
 
 
 class AzureOpenAILLM(OpenAICompatLLM):
+    """Estrategia de LLM sobre un deployment de Azure OpenAI."""
+
     name = "azure"
 
     def __init__(
@@ -48,6 +50,10 @@ class AzureOpenAILLM(OpenAICompatLLM):
         model: str | None = None,
         client: httpx.Client | None = None,
     ) -> AzureOpenAILLM:
+        """Arma el proveedor desde variables AZURE_OPENAI_*.
+
+        Falla claro si falta alguna.
+        """
         endpoint = env.get("AZURE_OPENAI_ENDPOINT", "")
         deployment = model or env.get("AZURE_OPENAI_DEPLOYMENT_NAME", "")
         if not endpoint or not deployment:

@@ -1,3 +1,5 @@
+"""Proveedor Gemini (generateContent)."""
+
 from __future__ import annotations
 
 from adapters.llm.base import HttpLLM, JsonDict
@@ -5,6 +7,8 @@ from ports import LLMRequest, LLMResponse
 
 
 class GeminiLLM(HttpLLM):
+    """Estrategia de LLM sobre la API generateContent de Gemini."""
+
     name = "gemini"
 
     def _build(

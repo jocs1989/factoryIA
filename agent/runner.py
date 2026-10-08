@@ -19,6 +19,11 @@ from tools.session import Session
 
 
 class TurnResult(BaseModel):
+    """Lo que ve el canal al cerrar un turno.
+
+    Mensajes, etapa y si espera a un asesor.
+    """
+
     messages: list[str]
     stage: str
     version: int
@@ -28,6 +33,8 @@ class TurnResult(BaseModel):
 
 
 class ConversationRunner:
+    """Corre turnos de conversacion sobre el grafo, uno a la vez por caso."""
+
     def __init__(self, deps: GraphDeps, checkpointer: Any) -> None:
         self._deps = deps
         self._graph = build_graph(deps, checkpointer)

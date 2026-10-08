@@ -53,6 +53,7 @@ def read_allowed(path: Path) -> dict[str, str]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Corre un escenario con un modelo real e informa sus decisiones."""
     os.environ.setdefault("AGENT_ENV", "mock")
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--env-file", type=Path, help="archivo con OPENAI_API_KEY")

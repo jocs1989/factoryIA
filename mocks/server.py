@@ -15,6 +15,7 @@ from mocks.engine import MockEngine
 
 
 def create_app(engine: MockEngine | None = None) -> FastAPI:
+    """Sirve los mappings por HTTP para `docker compose`."""
     directory = Path(os.environ.get("MOCK_MAPPINGS_DIR", "mocks/mappings"))
     state = {"engine": engine or MockEngine.from_dir(directory)}
     app = FastAPI(title="Mocks de proveedores")

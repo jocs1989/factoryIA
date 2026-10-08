@@ -15,6 +15,7 @@ PRICING = Path("config/llm_pricing.yaml")
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Imprime las metricas del reto calculadas desde la bitacora."""
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--audit", type=Path, default=Path("reports/audit.jsonl"))
     args = p.parse_args(argv)

@@ -44,10 +44,12 @@ def set_correlation_id(value: str) -> Token[str]:
 
 
 def reset_correlation_id(token: Token[str]) -> None:
+    """Restaura el id de correlacion anterior."""
     _CORRELATION.reset(token)
 
 
 def get_correlation_id() -> str:
+    """Id de correlacion de la peticion en curso."""
     return _CORRELATION.get()
 
 
@@ -70,6 +72,7 @@ class JsonFormatter(logging.Formatter):
     """Una linea JSON por evento, redactada y con `correlation_id`."""
 
     def format(self, record: logging.LogRecord) -> str:
+        """Linea JSON redactada con el id de correlacion."""
         payload: dict[str, Any] = {
             "ts": datetime.fromtimestamp(record.created, UTC).isoformat(),
             "level": record.levelname,
@@ -89,6 +92,7 @@ class ConsoleFormatter(logging.Formatter):
     """Formato legible para desarrollo, tambien redactado."""
 
     def format(self, record: logging.LogRecord) -> str:
+        """Linea legible para desarrollo, tambien redactada."""
         fields = getattr(record, "fields", None) or {}
         extra = " ".join(f"{k}={v}" for k, v in redact(fields).items())
         line = (
@@ -115,6 +119,7 @@ def configure_logging(level: str = "INFO", fmt: str = "console") -> None:
 
 
 def get_logger(name: str) -> logging.Logger:
+    """Logger de la aplicacion con el nombre dado."""
     return logging.getLogger(f"auto_equity.{name}")
 
 

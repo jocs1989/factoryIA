@@ -20,10 +20,14 @@ from tools.spec import (
 
 
 class UpdateIn(ToolInput):
+    """Campos a editar, de una lista blanca por etapa."""
+
     fields: dict[str, str]
 
 
 class UpdateOut(BaseModel):
+    """Campos editados y etapa resultante."""
+
     updated: list[str]
     stage: str
 
@@ -62,6 +66,10 @@ def _clean(field: str, raw: str) -> str:
 
 
 def update_case(ctx: ToolContext, inp: UpdateIn) -> Outcome:
+    """Edita solo campos permitidos en la etapa.
+
+    Un cambio de monto invalida la simulacion.
+    """
     allowed = _FIELDS_BY_STAGE.get(ctx.case.stage, frozenset())
     bad = sorted(set(inp.fields) - allowed)
     if bad:

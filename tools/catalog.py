@@ -70,6 +70,7 @@ _PRE_DOCS = frozenset({S.ELIGIBILITY, S.PROFILING, S.SIMULATION})
 
 
 def build_catalog() -> Mapping[str, ToolSpec]:
+    """Registra las 15 tools: efecto, riesgo, permiso y etapas permitidas."""
     specs = [
         ToolSpec(
             "get_case_snapshot",

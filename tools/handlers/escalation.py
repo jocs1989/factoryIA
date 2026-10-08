@@ -24,6 +24,8 @@ from tools.spec import (
 
 
 class EscalateIn(ToolInput):
+    """Escalada manual con motivo, resumen y evidencia."""
+
     reason_code: str = Field(pattern=r"^[A-Z_]{3,40}$")
     summary: str = Field(min_length=3, max_length=1000)
     evidence: dict[str, Any] = Field(default_factory=dict)
@@ -31,11 +33,15 @@ class EscalateIn(ToolInput):
 
 
 class EscalateOut(BaseModel):
+    """Ticket creado y etapa resultante."""
+
     ticket_id: str
     stage: str
 
 
 class ResolveIn(ToolInput):
+    """Resolucion del asesor; la justificacion es obligatoria."""
+
     ticket_id: str
     decision: Literal["resume", "reject", "decline"]
     justification: str = Field(min_length=5, max_length=1000)
@@ -43,12 +49,15 @@ class ResolveIn(ToolInput):
 
 
 class ResolveOut(BaseModel):
+    """Decision aplicada y etapa resultante."""
+
     ticket_id: str
     decision: str
     stage: str
 
 
 def escalate_to_human(ctx: ToolContext, inp: EscalateIn) -> Outcome:
+    """Crea el ticket y pausa el caso a la espera de un asesor."""
     ticket = open_ticket(
         ctx, inp.reason_code, inp.summary, inp.evidence, inp.suggested_action
     )
@@ -63,6 +72,7 @@ def escalate_to_human(ctx: ToolContext, inp: EscalateIn) -> Outcome:
 
 
 def resolve_escalation(ctx: ToolContext, inp: ResolveIn) -> Outcome:
+    """El asesor reanuda (con overrides auditados), rechaza o declina."""
     ticket = ctx.deps.inbox.get(inp.ticket_id)
     if ticket is None or ticket.case_id != ctx.case.case_id:
         raise ToolRefusal("TICKET_NOT_FOUND", "el ticket no es de este caso")

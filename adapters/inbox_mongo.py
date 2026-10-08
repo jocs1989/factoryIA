@@ -1,3 +1,5 @@
+"""Bandeja de tickets en MongoDB."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,6 +12,8 @@ from ports import Ticket, TicketError, TicketStatus
 
 
 class MongoInbox:
+    """Implementacion de `InboxPort` sobre una coleccion de MongoDB."""
+
     def __init__(self, collection: Collection[dict[str, Any]]) -> None:
         self._coll = collection
 
@@ -20,6 +24,7 @@ class MongoInbox:
         return Ticket.model_validate(doc)
 
     def create(self, ticket: Ticket) -> None:
+        """Inserta el ticket; el id duplicado lo rechaza el indice unico."""
         doc = {"_id": ticket.ticket_id, **ticket.model_dump(mode="json")}
         try:
             self._coll.insert_one(doc)
@@ -27,16 +32,22 @@ class MongoInbox:
             raise TicketError(f"ticket {ticket.ticket_id} ya existe") from exc
 
     def get(self, ticket_id: str) -> Ticket | None:
+        """Ticket por id, o None."""
         doc = self._coll.find_one({"_id": ticket_id})
         return self._ticket(doc) if doc else None
 
     def list_open(self) -> list[Ticket]:
+        """Tickets con estado OPEN."""
         docs = self._coll.find({"status": TicketStatus.OPEN.value})
         return [self._ticket(d) for d in docs]
 
     def resolve(
         self, ticket_id: str, *, resolution: str, resolved_by: str
     ) -> Ticket:
+        """Resuelve solo si sigue abierto.
+
+        Dos asesores no lo resuelven a la vez.
+        """
         if not resolution.strip():
             raise TicketError("la resolucion exige justificacion")
         # Condicional sobre OPEN: dos asesores no resuelven el mismo ticket.

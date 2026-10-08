@@ -1,3 +1,5 @@
+"""Proveedor Anthropic (Messages API)."""
+
 from __future__ import annotations
 
 from adapters.llm.base import HttpLLM, JsonDict
@@ -5,6 +7,8 @@ from ports import LLMRequest, LLMResponse
 
 
 class AnthropicLLM(HttpLLM):
+    """Estrategia de LLM sobre la Messages API de Anthropic."""
+
     name = "anthropic"
 
     def _build(

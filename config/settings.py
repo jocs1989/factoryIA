@@ -21,6 +21,8 @@ def _yaml_defaults(env: str) -> dict[str, Any]:
 
 
 class Settings(BaseSettings):
+    """Configuracion: entorno, luego .env, luego el YAML del ambiente."""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     agent_env: str = "dev"
@@ -47,6 +49,7 @@ class Settings(BaseSettings):
 
 
 def load_settings() -> Settings:
+    """Carga la configuracion del ambiente elegido en `AGENT_ENV`."""
     env = os.environ.get("AGENT_ENV", "dev")
     base = _yaml_defaults(env)
     base["agent_env"] = env

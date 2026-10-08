@@ -12,6 +12,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class Principal(BaseModel):
+    """Quien llama (agente, humano o anonimo) y sus permisos minimos."""
+
     model_config = ConfigDict(frozen=True)
 
     id: str
@@ -23,6 +25,8 @@ ANONYMOUS = Principal(id="anonymous", kind="anonymous", scopes=frozenset())
 
 
 class PrincipalRegistry:
+    """Catalogo de principals y sus credenciales, tomadas del entorno."""
+
     def __init__(
         self,
         principals: list[tuple[Principal, str]],
@@ -35,6 +39,10 @@ class PrincipalRegistry:
     def from_yaml(
         cls, path: Path, env: Mapping[str, str]
     ) -> PrincipalRegistry:
+        """Carga los principals.
+
+        Cada clave se resuelve desde su variable de entorno.
+        """
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         items: list[tuple[Principal, str]] = []
         for raw in data["principals"]:
@@ -55,9 +63,14 @@ class PrincipalRegistry:
         return next((k for k, p in self._keys if p.id == principal_id), "")
 
     def get(self, principal_id: str) -> Principal:
+        """Principal por id."""
         return self._by_id[principal_id]
 
     def resolve(self, api_key: str | None) -> Principal | None:
+        """Principal de una API key, comparada en tiempo constante.
+
+        None si no coincide.
+        """
         if not api_key:
             return None
         for key, principal in self._keys:

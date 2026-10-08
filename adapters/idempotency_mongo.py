@@ -1,3 +1,5 @@
+"""Almacen de idempotencia en MongoDB con expiracion por TTL."""
+
 from __future__ import annotations
 
 import contextlib
@@ -15,11 +17,13 @@ class MongoIdempotency:
         self._coll = collection
 
     def get(self, key: str) -> dict[str, Any] | None:
+        """Resultado guardado para la clave, o None."""
         doc = self._coll.find_one({"_id": key})
         return doc["result"] if doc else None
 
     def put(self, key: str, result: dict[str, Any]) -> None:
         # Si ya hay uno, gana el primero.
+        """Inserta el resultado; si la clave ya existe, conserva el primero."""
         with contextlib.suppress(DuplicateKeyError):
             self._coll.insert_one(
                 {

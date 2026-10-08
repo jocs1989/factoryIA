@@ -21,6 +21,8 @@ from adapters.vehicle_registry_http import HttpVehicleRegistry
 
 @dataclass(frozen=True)
 class Providers:
+    """Los cinco clientes de proveedores externos que usan las tools."""
+
     bureau: HttpBureau
     key_quote: HttpKeyQuote
     vehicles: HttpVehicleRegistry

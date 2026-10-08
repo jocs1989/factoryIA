@@ -39,6 +39,10 @@ class RetryingLLM:
         self.name = inner.name
 
     def complete(self, request: LLMRequest) -> LLMResponse:
+        """Reintenta con backoff solo los errores `retryable`.
+
+        El resto se propaga.
+        """
         attempt = 0
         while True:
             try:

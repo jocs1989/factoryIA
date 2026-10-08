@@ -20,6 +20,8 @@ _TEMPLATE = re.compile(r"\{\{request\.body\.([a-zA-Z0-9_.]+)\}\}")
 
 
 class MockResponse(BaseModel):
+    """Respuesta que el motor devuelve para una peticion."""
+
     status: int
     body: Any
     delay_ms: int = 0
@@ -37,6 +39,7 @@ def lookup(body: Any, path: str) -> Any:
 
 
 def as_text(value: Any) -> str:
+    """Texto con el que se compara un valor (true y false en minuscula)."""
     if isinstance(value, bool):
         return "true" if value else "false"
     return "null" if value is None else str(value)
@@ -81,21 +84,33 @@ def load_mappings(directory: Path) -> list[tuple[Path, Mapping]]:
 
 
 class MockEngine:
+    """Resuelve peticiones contra los mappings.
+
+    Menor prioridad, luego mas especifico.
+    """
+
     def __init__(self, mappings: Sequence[Mapping]) -> None:
         self._mappings = list(mappings)
 
     @classmethod
     def from_dir(cls, directory: Path) -> MockEngine:
+        """Carga todos los mappings JSON de un directorio."""
         return cls([m for _, m in load_mappings(directory)])
 
     @property
     def mappings_loaded(self) -> int:
+        """Cantidad de mappings cargados."""
         return len(self._mappings)
 
     def ids(self) -> list[str]:
+        """Ids de los mappings, ordenados."""
         return sorted(m.id for m in self._mappings)
 
     def handle(self, method: str, path: str, body: Any) -> MockResponse:
+        """Responde la peticion.
+
+        Sin coincidencia, 404 con el diagnostico del casi-acierto.
+        """
         same = [
             m
             for m in self._mappings

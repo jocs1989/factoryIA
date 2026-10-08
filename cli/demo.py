@@ -13,6 +13,7 @@ from config.settings import load_settings
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Corre los escenarios y muestra su desenlace, sin red."""
     os.environ.setdefault("AGENT_ENV", "mock")
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--policy", choices=["rules", "llm"], default="rules")

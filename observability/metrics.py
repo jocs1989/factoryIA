@@ -38,6 +38,8 @@ def _p95(values: list[int]) -> int:
 
 @dataclass
 class ToolStats:
+    """Llamadas, negadas, errores y latencias de una tool."""
+
     calls: int = 0
     denied: int = 0
     errors: int = 0
@@ -45,11 +47,14 @@ class ToolStats:
 
     @property
     def p95_ms(self) -> int:
+        """Latencia p95 en milisegundos."""
         return _p95(self.latencies)
 
 
 @dataclass
 class ModelUsage:
+    """Llamadas y tokens de un modelo."""
+
     calls: int = 0
     tokens_in: int = 0
     tokens_out: int = 0
@@ -57,6 +62,8 @@ class ModelUsage:
 
 @dataclass
 class Metrics:
+    """Respuestas del reto calculadas desde la bitacora."""
+
     cases: int
     rejections_by_reason: dict[str, int]
     mismatches_by_type: dict[str, int]
@@ -77,6 +84,10 @@ class Metrics:
 def compute_metrics(
     events: Iterable[AuditEvent], pricing: dict[str, Any] | None = None
 ) -> Metrics:
+    """Calcula las metricas.
+
+    El costo usa tarifas configuradas, nunca inventadas.
+    """
     evs = list(events)
     cases = {e.case_id for e in evs}
     rejections: Counter[str] = Counter()
@@ -176,6 +187,7 @@ def _cost(
 
 
 def format_report(m: Metrics) -> str:
+    """Reporte legible de las metricas."""
     lines = [
         "REPORTE DE DECISIONES",
         f"  casos: {m.cases}   listos para financiera: {m.ready_cases}   "

@@ -26,6 +26,7 @@ def _signature(m: Mapping) -> tuple[str, str, tuple[tuple[str, str], ...]]:
 
 
 def validate_catalog(directory: Path) -> list[str]:
+    """Errores del catalogo: esquema, ids repetidos, duplicados y shadowing."""
     errors: list[str] = []
     parsed: list[tuple[Path, Mapping]] = []
     for path in sorted(directory.rglob("*.json")):
@@ -66,6 +67,7 @@ def validate_catalog(directory: Path) -> list[str]:
 
 
 def main(argv: list[str]) -> int:
+    """Valida el catalogo; sale con 1 si hay errores."""
     directory = Path(argv[1]) if len(argv) > 1 else Path("mocks/mappings")
     errors = validate_catalog(directory)
     for e in errors:

@@ -25,6 +25,7 @@ _YES = re.compile(
 
 
 def parse_consent(text: str) -> bool | None:
+    """True si el cliente autoriza, False si niega, None si no queda claro."""
     t = _plain(text)
     if _NO.search(t):
         return False
@@ -52,6 +53,7 @@ def parse_second_key(text: str) -> bool | None:
 
 
 def parse_term(text: str) -> int | None:
+    """Plazo (12, 24, 36 o 48 meses) mencionado en el texto, o None."""
     m = re.search(r"\b(12|24|36|48)\b", _plain(text))
     return int(m.group(1)) if m else None
 
@@ -60,6 +62,7 @@ _AMOUNT = re.compile(r"\$?\s*(\d{1,3}(?:[.,]\d{3})+|\d{4,7})")
 
 
 def parse_amount(text: str) -> Decimal | None:
+    """Monto en pesos mencionado en el texto, o None."""
     m = _AMOUNT.search(text)
     if not m:
         return None

@@ -11,6 +11,11 @@ ID_RE = re.compile(r"^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)+$")
 
 
 class BodyPattern(BaseModel):
+    """Condicion sobre el cuerpo.
+
+    Una ruta o varias concatenadas contra un valor.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     jsonPath: str | None = None
@@ -25,6 +30,8 @@ class BodyPattern(BaseModel):
 
 
 class MockRequest(BaseModel):
+    """Peticion que un mapping reconoce."""
+
     model_config = ConfigDict(extra="forbid")
 
     method: Literal["GET", "POST", "PUT", "DELETE", "PATCH"]
@@ -33,6 +40,8 @@ class MockRequest(BaseModel):
 
 
 class MockReply(BaseModel):
+    """Respuesta de un mapping, con retardo opcional para simular lentitud."""
+
     model_config = ConfigDict(extra="forbid")
 
     status: int = Field(default=200, ge=100, le=599)
@@ -42,6 +51,11 @@ class MockReply(BaseModel):
 
 
 class Mapping(BaseModel):
+    """Un mock declarativo.
+
+    El esquema es estricto y rechaza campos desconocidos.
+    """
+
     model_config = ConfigDict(extra="forbid")
 
     id: str

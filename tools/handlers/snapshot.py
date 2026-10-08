@@ -20,12 +20,18 @@ from tools.spec import (
 
 
 class SnapshotOut(BaseModel):
+    """Resumen del caso para el agente."""
+
     stage: str
     version: int
     projection: dict[str, Any]
 
 
 def project_case(case: Case) -> dict[str, Any]:
+    """Proyeccion compacta y sin datos personales.
+
+    Lo unico que ve el modelo.
+    """
     d = case.data
     sim = d.get("simulation") or {}
     return {
@@ -71,6 +77,7 @@ def project_case(case: Case) -> dict[str, Any]:
 
 
 def get_case_snapshot(ctx: ToolContext, inp: CaseOnlyIn) -> Outcome:
+    """Devuelve la etapa, la version y la proyeccion del caso."""
     c = ctx.case
     return Outcome(
         SnapshotOut(

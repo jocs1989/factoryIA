@@ -110,11 +110,15 @@ OVERRIDABLE = frozenset(
 
 
 class Severity(StrEnum):
+    """Gravedad de un hallazgo: pedir correccion o escalar a un asesor."""
+
     CORRECTION = "CORRECTION"
     ESCALATE = "ESCALATE"
 
 
 class ReviewOutcome(StrEnum):
+    """Resultado global de la revision documental."""
+
     OK = "OK"
     PENDING = "PENDING"  # faltan documentos
     CORRECTION = "CORRECTION"
@@ -123,6 +127,8 @@ class ReviewOutcome(StrEnum):
 
 
 class DocField(BaseModel):
+    """Campo extraido de un documento y su confianza."""
+
     model_config = ConfigDict(frozen=True)
 
     value: str
@@ -130,6 +136,8 @@ class DocField(BaseModel):
 
 
 class DocFacts(BaseModel):
+    """Documento ligado con su tipo declarado, el detectado y sus campos."""
+
     model_config = ConfigDict(frozen=True)
 
     declared_type: str
@@ -139,6 +147,8 @@ class DocFacts(BaseModel):
 
 
 class Finding(BaseModel):
+    """Hallazgo de la revision; un asesor puede levantarlo si es escalable."""
+
     model_config = ConfigDict(frozen=True)
 
     code: str
@@ -149,6 +159,8 @@ class Finding(BaseModel):
 
 
 class ReviewInput(BaseModel):
+    """Todo lo que la revision necesita; se recalcula desde cero cada vez."""
+
     model_config = ConfigDict(frozen=True)
 
     customer_name: str
@@ -163,6 +175,11 @@ class ReviewInput(BaseModel):
 
 
 class DocumentReview(BaseModel):
+    """Resultado de revisar el expediente.
+
+    Faltantes, hallazgos e ingreso verificado.
+    """
+
     model_config = ConfigDict(frozen=True)
 
     outcome: ReviewOutcome
@@ -172,6 +189,7 @@ class DocumentReview(BaseModel):
     payment_capacity_ok: bool | None
 
     def active(self, codes: frozenset[str] | None = None) -> list[Finding]:
+        """Hallazgos vigentes (no levantados), opcional por codigos."""
         return [
             f
             for f in self.findings
@@ -222,6 +240,10 @@ def _validators_ok(doc_type: str, doc: DocFacts) -> bool:
 def review_documents(
     inp: ReviewInput, policy: DocumentPolicy
 ) -> DocumentReview:
+    """Valida el expediente en codigo.
+
+    El modelo extrae, aqui se compara con umbrales.
+    """
     findings: list[Finding] = []
 
     def add(code: str, sev: Severity, doc_type: str | None, msg: str) -> None:

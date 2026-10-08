@@ -44,6 +44,8 @@ class ChosenOption(_Strict):
 
 
 class StoredField(_Strict):
+    """Valor extraido y su confianza, como se guarda en el caso."""
+
     value: str
     confidence: str
 
@@ -60,10 +62,14 @@ class StoredDocument(_Strict):
 
 
 class ValidationState(_Strict):
+    """Resultado de la ultima validacion documental."""
+
     outcome: str
 
 
 class OpenCorrection(_Strict):
+    """Correccion que se le pidio al cliente y sigue abierta."""
+
     code: str
     doc_type: str | None = None
     message: str
@@ -85,6 +91,8 @@ class AdvisorOverride(_Strict):
 
 
 class ReadinessEvidence(_Strict):
+    """Huella y version de regla con que el gate aprobo el caso."""
+
     inputs_hash: str
     rule_version: str
 

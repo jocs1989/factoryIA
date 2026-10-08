@@ -9,11 +9,15 @@ from ports import CaseRepositoryPort
 
 
 class IdentityError(Exception):
+    """La verificacion de identidad fallo; no dice si el caso existe."""
+
     pass
 
 
 @dataclass(frozen=True)
 class Session:
+    """Sesion ligada a un caso; el ejecutor rechaza cualquier otro."""
+
     case_id: str
 
 

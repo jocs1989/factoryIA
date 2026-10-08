@@ -10,6 +10,8 @@ from ports import NotFoundError, ProviderError
 
 
 class ProviderClient:
+    """Cliente HTTP comun: traduce fallos de proveedor a errores tipados."""
+
     def __init__(
         self,
         name: str,
@@ -22,6 +24,10 @@ class ProviderClient:
         self._client = client or httpx.Client(timeout=timeout)
 
     def post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        """POST JSON.
+
+        404 es `NotFoundError` y 429 o 5xx son errores reintentables.
+        """
         try:
             res = self._client.post(f"{self._base}{path}", json=payload)
         except httpx.TransportError as exc:

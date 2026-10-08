@@ -23,6 +23,7 @@ class FallbackLLM:
         self._failures = dict.fromkeys(range(len(providers)), 0)
 
     def complete(self, request: LLMRequest) -> LLMResponse:
+        """Prueba cada proveedor en orden; salta los de circuito abierto."""
         errors: list[str] = []
         for i, provider in enumerate(self._providers):
             if self._failures[i] >= self._max:

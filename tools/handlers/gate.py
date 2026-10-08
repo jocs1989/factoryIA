@@ -38,6 +38,8 @@ from tools.spec import (
 
 
 class ReadyOut(BaseModel):
+    """Resultado del gate con cada chequeo."""
+
     status: str
     checks: dict[str, bool]
     blocking: list[str]

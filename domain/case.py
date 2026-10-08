@@ -11,6 +11,11 @@ from domain.facts import validate_facts
 
 
 class Stage(StrEnum):
+    """Etapas del caso.
+
+    REJECTED, DECLINED y READY_FOR_LENDER son terminales.
+    """
+
     ELIGIBILITY = "ELIGIBILITY"
     PROFILING = "PROFILING"
     SIMULATION = "SIMULATION"
@@ -40,6 +45,8 @@ ALLOWED: dict[Stage, frozenset[Stage]] = {
 
 
 class InvalidTransition(Exception):
+    """La transicion pedida no esta permitida desde la etapa actual."""
+
     pass
 
 
@@ -48,6 +55,8 @@ class StaleVersion(Exception):
 
 
 class Case(BaseModel):
+    """Estado inmutable del caso; la version permite escritura optimista."""
+
     model_config = ConfigDict(frozen=True)
 
     case_id: str
@@ -66,6 +75,10 @@ class Case(BaseModel):
 
 
 def can_transition(case: Case, to: Stage) -> bool:
+    """True si el caso puede pasar a `to`.
+
+    Solo el dominio decide, nunca el modelo.
+    """
     if case.stage is Stage.ESCALATED:
         # El asesor reanuda donde se escalo, o cierra el caso.
         targets = {Stage.REJECTED, Stage.DECLINED}

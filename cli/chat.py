@@ -36,6 +36,7 @@ def interactive(
     read: Callable[[str], str] = input,
     out: Callable[[str], None] = print,
 ) -> int:
+    """Chat interactivo con el agente."""
     case = rt.create_case(dict(DEFAULT_CASE))
     session = rt.verify(case.case_id, DEFAULT_CASE["phone_last4"])
     out(HELP)
@@ -76,6 +77,7 @@ def main(
     read: Callable[[str], str] = input,
     out: Callable[[str], None] = print,
 ) -> int:
+    """Chat con el agente: cliente simulado (--scenario) o interactivo."""
     os.environ.setdefault("AGENT_ENV", "mock")
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--scenario", help="reproduce un escenario (p. ej. 05)")

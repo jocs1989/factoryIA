@@ -25,12 +25,16 @@ class LLMError(Exception):
 
 @dataclass(frozen=True)
 class Message:
+    """Un turno de la conversacion que se envia al modelo."""
+
     role: Literal["user", "assistant"]
     content: str
 
 
 @dataclass(frozen=True)
 class LLMRequest:
+    """Peticion normalizada a un proveedor de LLM, independiente de su API."""
+
     system: str
     messages: tuple[Message, ...]
     json_mode: bool = False
@@ -40,6 +44,8 @@ class LLMRequest:
 
 @dataclass(frozen=True)
 class LLMResponse:
+    """Respuesta normalizada: texto, proveedor, modelo y tokens usados."""
+
     text: str
     provider: str
     model: str
@@ -51,7 +57,12 @@ class LLMPort(Protocol):
 
     name: str
 
-    def complete(self, request: LLMRequest) -> LLMResponse: ...
+    def complete(self, request: LLMRequest) -> LLMResponse:
+        """Envia la peticion y devuelve la respuesta.
+
+        Lanza `LLMError` si falla.
+        """
+        ...
 
 
 # --- errores comunes ----------------------------------------------------
@@ -62,10 +73,14 @@ class NotFoundError(Exception):
 
 
 class CaseNotFound(NotFoundError):
+    """El caso pedido al repositorio no existe."""
+
     pass
 
 
 class CaseExists(Exception):
+    """Ya hay un caso con ese identificador."""
+
     pass
 
 
@@ -85,18 +100,24 @@ class TicketError(Exception):
 
 
 class BureauPort(Protocol):
+    """Consulta al Buro de Credito; devuelve solo el perfil normalizado."""
+
     def query(self, customer_id: str) -> BureauProfile:
         """Perfil normalizado; nunca el reporte crudo."""
         ...
 
 
 class KeyQuotePort(Protocol):
+    """Cotizacion de la segunda llave del vehiculo."""
+
     def quote(self, vehicle_id: str) -> Decimal:
         """Costo de la segunda llave. Determinista por vehiculo."""
         ...
 
 
 class VehicleRecord(BaseModel):
+    """Hechos de un vehiculo y su valor de avaluo."""
+
     model_config = ConfigDict(frozen=True)
 
     vehicle_id: str
@@ -105,12 +126,16 @@ class VehicleRecord(BaseModel):
 
 
 class VehicleRegistryPort(Protocol):
+    """Registro de vehiculos: titularidad, gravamenes y segunda llave."""
+
     def get_vehicle(self, vehicle_id: str, customer_id: str) -> VehicleRecord:
         """Hechos del vehiculo; `owner_matches` es respecto al cliente."""
         ...
 
 
 class ChannelPort(Protocol):
+    """Canal de mensajeria saliente hacia el cliente."""
+
     def send(self, case_id: str, text: str) -> str:
         """Mensaje saliente al cliente. Devuelve el id del mensaje."""
         ...
@@ -120,6 +145,8 @@ class ChannelPort(Protocol):
 
 
 class DocumentRef(BaseModel):
+    """Referencia a un documento que el cliente adjunto."""
+
     model_config = ConfigDict(frozen=True)
 
     doc_id: str
@@ -127,6 +154,8 @@ class DocumentRef(BaseModel):
 
 
 class ExtractedField(BaseModel):
+    """Campo extraido de un documento, con la confianza de la extraccion."""
+
     model_config = ConfigDict(frozen=True)
 
     value: str
@@ -146,18 +175,26 @@ class Extraction(BaseModel):
 
 
 class DocumentReaderPort(Protocol):
-    def read(self, ref: DocumentRef) -> Extraction: ...
+    """Lector de documentos (OCR o vision) con campos estructurados."""
+
+    def read(self, ref: DocumentRef) -> Extraction:
+        """Lee el documento; su texto crudo es dato, nunca una instruccion."""
+        ...
 
 
 # --- persistencia --------------------------------------------------------
 
 
 class CaseRepositoryPort(Protocol):
+    """Persistencia de casos con concurrencia optimista por version."""
+
     def add(self, case: Case) -> None:
         """Crea el caso; CaseExists si ya hay uno con ese id."""
         ...
 
-    def get(self, case_id: str) -> Case | None: ...
+    def get(self, case_id: str) -> Case | None:
+        """Devuelve el caso o None si no existe."""
+        ...
 
     def save(self, case: Case, *, expected_version: int) -> None:
         """Escritura optimista: solo si lo guardado esta en
@@ -167,11 +204,15 @@ class CaseRepositoryPort(Protocol):
 
 
 class TicketStatus(StrEnum):
+    """Estado de un ticket de escalada."""
+
     OPEN = "OPEN"
     RESOLVED = "RESOLVED"
 
 
 class Ticket(BaseModel):
+    """Caso escalado a un asesor humano, con su evidencia y su resolucion."""
+
     model_config = ConfigDict(frozen=True)
 
     ticket_id: str
@@ -187,11 +228,19 @@ class Ticket(BaseModel):
 
 
 class InboxPort(Protocol):
-    def create(self, ticket: Ticket) -> None: ...
+    """Bandeja de tickets que atienden los asesores."""
 
-    def get(self, ticket_id: str) -> Ticket | None: ...
+    def create(self, ticket: Ticket) -> None:
+        """Agrega un ticket; `TicketError` si ya existe uno con ese id."""
+        ...
 
-    def list_open(self) -> list[Ticket]: ...
+    def get(self, ticket_id: str) -> Ticket | None:
+        """Devuelve el ticket o None si no existe."""
+        ...
+
+    def list_open(self) -> list[Ticket]:
+        """Tickets abiertos, a la espera de un asesor."""
+        ...
 
     def resolve(
         self, ticket_id: str, *, resolution: str, resolved_by: str
@@ -226,7 +275,11 @@ class AuditEvent(BaseModel):
 
 
 class AuditPort(Protocol):
-    def record(self, event: AuditEvent) -> None: ...
+    """Bitacora de decisiones: solo se agrega y se consulta por caso."""
+
+    def record(self, event: AuditEvent) -> None:
+        """Agrega un evento; un evento nunca se modifica ni se borra."""
+        ...
 
     def list_events(self, case_id: str) -> list[AuditEvent]:
         """Linea de tiempo del caso, en orden de registro."""
@@ -237,7 +290,11 @@ class AuditPort(Protocol):
 
 
 class IdempotencyPort(Protocol):
-    def get(self, key: str) -> dict[str, Any] | None: ...
+    """Resultados guardados para que un reintento no repita su efecto."""
+
+    def get(self, key: str) -> dict[str, Any] | None:
+        """Resultado guardado para la clave, o None si no hay."""
+        ...
 
     def put(self, key: str, result: dict[str, Any]) -> None:
         """Guarda el primer resultado; si ya hay uno, lo conserva."""

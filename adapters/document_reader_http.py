@@ -1,3 +1,5 @@
+"""Cliente HTTP del lector de documentos (OCR o vision)."""
+
 from __future__ import annotations
 
 from adapters.http_client import ProviderClient
@@ -12,6 +14,10 @@ class HttpDocumentReader:
         self._http = http
 
     def read(self, ref: DocumentRef) -> Extraction:
+        """Pide la extraccion.
+
+        El hash del contenido liga el documento al caso.
+        """
         raw = self._http.post(
             "/api/documents/extract",
             {"doc_id": ref.doc_id, "doc_type": ref.doc_type},

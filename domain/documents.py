@@ -18,6 +18,8 @@ from pydantic import BaseModel, ConfigDict
 
 
 class IncomePolicy(BaseModel):
+    """Tolerancias para comparar el ingreso comprobado con el declarado."""
+
     model_config = ConfigDict(frozen=True)
 
     accept_diff_pct: Decimal
@@ -25,6 +27,11 @@ class IncomePolicy(BaseModel):
 
 
 class DocumentPolicy(BaseModel):
+    """Politica documental versionada.
+
+    Tolerancias, vigencias, moneda y periodos.
+    """
+
     model_config = ConfigDict(frozen=True)
 
     version: str
@@ -40,6 +47,7 @@ class DocumentPolicy(BaseModel):
 
 
 def load_document_policy(path: Path) -> DocumentPolicy:
+    """Carga la politica documental desde su YAML."""
     data = yaml.safe_load(path.read_text(encoding="utf-8"))
     return DocumentPolicy.model_validate(data)
 
@@ -48,12 +56,16 @@ def load_document_policy(path: Path) -> DocumentPolicy:
 
 
 class IncomeResult(StrEnum):
+    """Veredicto sobre el ingreso: aceptar, pedir correccion o escalar."""
+
     ACCEPT = "ACCEPT"
     CORRECTION = "CORRECTION"
     ESCALATE = "ESCALATE"
 
 
 class IncomeCheck(BaseModel):
+    """Veredicto y diferencia porcentual del ingreso."""
+
     model_config = ConfigDict(frozen=True)
 
     result: IncomeResult
@@ -63,6 +75,10 @@ class IncomeCheck(BaseModel):
 def check_income(
     declared: Decimal, verified: Decimal, policy: DocumentPolicy
 ) -> IncomeCheck:
+    """Compara el ingreso mensual comprobado con el declarado.
+
+    Solo importa si es menor.
+    """
     if declared <= 0:
         raise ValueError("el ingreso declarado debe ser positivo")
     # Solo importa que el verificado sea MENOR al declarado.
@@ -89,10 +105,12 @@ def payment_capacity_ok(
 
 
 def is_vigent(doc_date: date, today: date, max_days: int) -> bool:
+    """True si el documento no es futuro y no excede los dias de vigencia."""
     return doc_date <= today and (today - doc_date).days <= max_days
 
 
 def id_not_expired(expiry: date, today: date) -> bool:
+    """True si la identificacion no vence antes de hoy."""
     return expiry >= today
 
 
@@ -100,6 +118,8 @@ def id_not_expired(expiry: date, today: date) -> bool:
 
 
 class NameMatch(StrEnum):
+    """Resultado de comparar nombres o domicilios."""
+
     MATCH = "MATCH"
     SIMILAR = "SIMILAR"  # pide correccion
     MISMATCH = "MISMATCH"  # escala
@@ -120,6 +140,10 @@ def _tokens(name: str) -> list[str]:
 def match_names(
     a: str, b: str, similar_min: Decimal = Decimal("0.85")
 ) -> NameMatch:
+    """Compara nombres sin acentos ni orden.
+
+    Parecido pide correccion, distinto escala.
+    """
     ta, tb = _tokens(a), _tokens(b)
     if not ta or not tb:
         return NameMatch.MISMATCH
@@ -176,10 +200,12 @@ _RFC = re.compile(r"^[A-ZÑ&]{3,4}\d{6}[A-Z0-9]{3}$")
 
 
 def valid_curp(value: str) -> bool:
+    """True si la CURP tiene un formato valido."""
     return bool(_CURP.match(value.strip().upper()))
 
 
 def valid_rfc(value: str) -> bool:
+    """True si el RFC tiene un formato valido."""
     return bool(_RFC.match(value.strip().upper()))
 
 
@@ -192,6 +218,7 @@ def net_matches(
     net: Decimal,
     tolerance: Decimal = Decimal("1.00"),
 ) -> bool:
+    """True si bruto menos deducciones es el neto, dentro de la tolerancia."""
     return abs(gross - deductions - net) <= tolerance
 
 

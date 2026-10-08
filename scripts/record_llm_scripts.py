@@ -16,6 +16,7 @@ HANDWRITTEN = {"09-inyeccion-en-documento.json"}
 
 
 def main() -> None:
+    """Regraba los guiones de LLM desde la politica por reglas."""
     LLM_DIR.mkdir(parents=True, exist_ok=True)
     for sc in load_scenarios():
         name = sc.llm.script

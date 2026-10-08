@@ -22,16 +22,23 @@ MAX_PAYMENT_RATIO = Decimal("0.35")
 
 
 def reject_float(v: Any) -> Any:
+    """Rechaza decimales binarios en montos; el dinero es texto o entero."""
     if isinstance(v, float):
         raise ValueError("usa texto o entero para montos, no decimales")
     return v
 
 
 class CaseOnlyIn(ToolInput):
+    """Entrada de las tools que solo necesitan el caso."""
+
     pass
 
 
 def ticket_id(case: Case) -> str:
+    """Id de ticket determinista por caso y version.
+
+    Un reintento no duplica.
+    """
     return f"T-{case.case_id}-{case.version}"
 
 
@@ -61,4 +68,5 @@ def open_ticket(
 
 
 def copy_data(case: Case) -> dict[str, Any]:
+    """Copia de los hechos del caso para modificarla sin mutar el original."""
     return dict(case.data)

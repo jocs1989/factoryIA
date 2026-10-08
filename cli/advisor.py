@@ -34,6 +34,10 @@ def main(
     client: httpx.Client | None = None,
     out: Callable[[str], None] = print,
 ) -> int:
+    """Consola del asesor.
+
+    Ver la bandeja, un caso o resolver un ticket por la API.
+    """
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--api-url", default="http://localhost:8000")
     sub = p.add_subparsers(dest="cmd", required=True)

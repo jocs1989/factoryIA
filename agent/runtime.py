@@ -52,6 +52,8 @@ REQUIRED_CASE_FIELDS = (
 
 @dataclass
 class Runtime:
+    """Todo lo ensamblado: dependencias, ejecutor, runner y principals."""
+
     settings: Settings
     deps: Deps
     executor: Executor
@@ -62,6 +64,7 @@ class Runtime:
     check_ready: Callable[[], None] = lambda: None  # lanza si no esta listo
 
     def create_case(self, data: dict[str, Any]) -> Case:
+        """Crea un caso en ELIGIBILITY con los datos requeridos."""
         missing = [f for f in REQUIRED_CASE_FIELDS if not data.get(f)]
         if missing:
             raise ValueError(f"faltan campos: {', '.join(missing)}")
@@ -72,6 +75,7 @@ class Runtime:
         return case
 
     def verify(self, case_id: str, phone_last4: str) -> Session:
+        """Liga una sesion al caso tras verificar la identidad."""
         return verify_identity(self.deps.repo, case_id, phone_last4)
 
 
@@ -105,6 +109,10 @@ def build_runtime(
     mappings_dir: Path | None = None,
     checkpointer: Any = None,
 ) -> Runtime:
+    """Raiz de composicion.
+
+    Arma repositorio, proveedores, politica y grafo segun la configuracion.
+    """
     clock = _clock(settings.fixed_today)
     audit = (
         JsonlAudit(Path(settings.audit_path))

@@ -9,6 +9,7 @@ from observability.evaluation import evaluate
 
 
 def main() -> int:
+    """Corre la evaluacion adversarial; sale con error si hay un falso OK."""
     report = evaluate()
     print(report.format())
     return 0 if report.passed else 1

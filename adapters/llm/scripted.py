@@ -8,6 +8,11 @@ from ports import LLMError, LLMRequest, LLMResponse
 
 
 class ScriptedLLM:
+    """LLM sin red que responde con un guion fijo.
+
+    Modo por defecto y de pruebas.
+    """
+
     name = "scripted"
 
     def __init__(
@@ -18,6 +23,10 @@ class ScriptedLLM:
         self._i = 0
 
     def complete(self, request: LLMRequest) -> LLMResponse:
+        """Siguiente respuesta del guion.
+
+        `LLMError` si se acaba o se simula una caida.
+        """
         if self._fail_after is not None and self._i >= self._fail_after:
             raise LLMError("scripted: caida simulada", retryable=True)
         if self._i >= len(self._responses):
@@ -36,6 +45,7 @@ class ConstantLLM:
         self._text = text
 
     def complete(self, request: LLMRequest) -> LLMResponse:
+        """Devuelve siempre el mismo texto."""
         return LLMResponse(
             text=self._text, provider=self.name, model="constant"
         )

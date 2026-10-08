@@ -32,12 +32,16 @@ from tools.spec import (
 
 
 class BuildSimIn(ToolInput):
+    """Monto solicitado; no admite decimales binarios."""
+
     requested_amount: Decimal = Field(gt=0)
 
     _v = field_validator("requested_amount", mode="before")(reject_float)
 
 
 class OptionOut(BaseModel):
+    """Una opcion de credito y si cabe en la capacidad de pago."""
+
     term_months: int
     principal: str
     second_key_cost: str
@@ -47,22 +51,29 @@ class OptionOut(BaseModel):
 
 
 class SimulationOut(BaseModel):
+    """Opciones calculadas y tope de monto."""
+
     max_amount: str
     options: list[OptionOut]
     stage: str
 
 
 class ChoiceIn(ToolInput):
+    """Plazo que elige el cliente."""
+
     term_months: int = Field(gt=0)
 
 
 class ChoiceOut(BaseModel):
+    """Plazo elegido y huella de la opcion."""
+
     term_months: int
     simulation_hash: str
     stage: str
 
 
 def build_simulation_tool(ctx: ToolContext, inp: BuildSimIn) -> Outcome:
+    """Calcula las opciones en codigo con Decimal e incluye la llave."""
     d = copy_data(ctx.case)
     profile = d.get("profile") or {}
     if profile.get("status") != ProfileStatus.APPROVED.value:
@@ -120,6 +131,7 @@ def build_simulation_tool(ctx: ToolContext, inp: BuildSimIn) -> Outcome:
 
 
 def record_customer_choice(ctx: ToolContext, inp: ChoiceIn) -> Outcome:
+    """Registra el plazo elegido, que debe existir y caber en la capacidad."""
     d = copy_data(ctx.case)
     sim = d.get("simulation")
     if not sim:

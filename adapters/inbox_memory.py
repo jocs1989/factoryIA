@@ -1,3 +1,5 @@
+"""Bandeja de tickets en memoria."""
+
 from __future__ import annotations
 
 import threading
@@ -6,20 +8,25 @@ from ports import Ticket, TicketError, TicketStatus
 
 
 class MemoryInbox:
+    """Implementacion en memoria de `InboxPort`, segura entre hilos."""
+
     def __init__(self) -> None:
         self._tickets: dict[str, Ticket] = {}
         self._lock = threading.Lock()
 
     def create(self, ticket: Ticket) -> None:
+        """Agrega el ticket; `TicketError` si el id ya existe."""
         with self._lock:
             if ticket.ticket_id in self._tickets:
                 raise TicketError(f"ticket {ticket.ticket_id} ya existe")
             self._tickets[ticket.ticket_id] = ticket
 
     def get(self, ticket_id: str) -> Ticket | None:
+        """Ticket por id, o None."""
         return self._tickets.get(ticket_id)
 
     def list_open(self) -> list[Ticket]:
+        """Tickets sin resolver."""
         return [
             t for t in self._tickets.values() if t.status is TicketStatus.OPEN
         ]
@@ -27,6 +34,7 @@ class MemoryInbox:
     def resolve(
         self, ticket_id: str, *, resolution: str, resolved_by: str
     ) -> Ticket:
+        """Resuelve el ticket; exige justificacion y que siga abierto."""
         if not resolution.strip():
             raise TicketError("la resolucion exige justificacion")
         with self._lock:

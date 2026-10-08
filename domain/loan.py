@@ -13,10 +13,13 @@ CENT = Decimal("0.01")
 
 
 class LoanError(ValueError):
+    """La simulacion no es posible (monto, plazo o LTV invalidos)."""
+
     pass
 
 
 def money(value: Decimal) -> Decimal:
+    """Redondea a centavos, mitad hacia arriba."""
     return value.quantize(CENT, rounding=ROUND_HALF_UP)
 
 
@@ -40,6 +43,8 @@ def monthly_payment(
 
 
 class SimulationOption(BaseModel):
+    """Una opcion de credito: plazo, capital, cuota y total."""
+
     model_config = ConfigDict(frozen=True)
 
     term_months: int
@@ -51,6 +56,8 @@ class SimulationOption(BaseModel):
 
 
 class Simulation(BaseModel):
+    """Opciones de credito calculadas y el tope de monto por LTV."""
+
     model_config = ConfigDict(frozen=True)
 
     max_amount: Decimal
