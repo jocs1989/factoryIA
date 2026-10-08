@@ -106,10 +106,15 @@ class NameMatch(StrEnum):
 
 
 def _tokens(name: str) -> list[str]:
+    """Palabras del nombre, sin acentos, en mayusculas y ordenadas.
+
+    Se conserva cualquier letra (no solo A-Z): un nombre con una letra fuera
+    del latin basico no debe desaparecer y dejar de coincidir consigo mismo.
+    """
     plain = unicodedata.normalize("NFKD", name)
     plain = "".join(c for c in plain if not unicodedata.combining(c))
-    plain = re.sub(r"[^A-Za-z\s]", " ", plain).upper()
-    return sorted(plain.split())
+    letters = "".join(c if c.isalpha() else " " for c in plain).upper()
+    return sorted(letters.split())
 
 
 def match_names(

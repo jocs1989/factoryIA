@@ -153,3 +153,14 @@ def test_ingreso_mensualizado(
 ) -> None:
     got = to_monthly(D(amount), period, POLICY)
     assert got == (None if expected is None else D(expected))
+
+
+@pytest.mark.parametrize(
+    "name", ["Ŋ", "Łukasz Ørsted", "Đorđe", "María Ñandú"]
+)
+def test_un_nombre_con_letras_no_latinas_coincide_consigo_mismo(
+    name: str,
+) -> None:
+    """Regresion: antes se descartaban las letras fuera de A-Z."""
+    assert match_names(name, name) is NameMatch.MATCH
+    assert match_names(name, name.upper()) is NameMatch.MATCH
