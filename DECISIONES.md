@@ -266,11 +266,16 @@ un catálogo de mocks validado (`make mocks-validate`).
 
 ## 12. Lo que NO está hecho y es honesto decir
 
-- **No se ejecutó contra servicios reales.** MongoDB se probó con `mongomock`
-  y hay una prueba de integración (`make integration`) que se omite sin
-  servidor. Los cuatro adaptadores de LLM se probaron contra transportes
-  simulados con el formato documentado de cada API; no se ejercitaron con
-  claves reales. Los nombres de modelo por defecto deben verificarse.
+- **Qué sí y qué no se ejecutó contra servicios reales.** MongoDB real:
+  `make integration` pasa contra `mongo:7` (10 pruebas) y la pila de
+  `docker compose` se levantó y se recorrió una conversación completa.
+  **Azure OpenAI se ejercitó con un modelo real** (`gpt-5.4-mini`): los
+  escenarios 1, 5 y 9 terminaron en el desenlace esperado, con el 100 % de
+  las decisiones tomadas por el modelo y ninguna caída a reglas
+  (`make smoke-llm`). Los adaptadores de OpenAI directo, Gemini, DeepSeek y
+  Anthropic solo se probaron contra transportes simulados con el formato
+  documentado de cada API; sus nombres de modelo por defecto deben
+  verificarse.
 - **Sesiones y bloqueo por intentos en memoria** de un proceso: con varias
   réplicas hacen falta Redis o Mongo con TTL.
 - **Datos personales en `Case.data` sin cifrar en reposo** (nombre, ingreso,

@@ -52,4 +52,4 @@ En WSL sobre `/mnt/c` el `uv sync` es muy lento: `export UV_LINK_MODE=copy UV_PR
 - **Umbrales en YAML**, no hardcodeados; sube su `version` al cambiarlos. Casos límite probados: score 579/580/640/700, ingreso exactamente 10 %/25 %, cuota exactamente 35 %.
 - Si cambias un mapping de `mocks/`, corre `make mocks-validate`; si cambias el comportamiento de la política por reglas, corre `make record-llm` (no pisa el 09).
 - Supuestos nuevos van a `DECISIONES.md` §6; decisiones nuevas, a un ADR en `docs/decisions/`.
-- Honestidad sobre lo no probado: Mongo real, los adaptadores de OpenAI/Gemini/DeepSeek/Anthropic con claves reales y el OCR real **no** se han ejercitado (ver `DECISIONES.md` §12).
+- Honestidad sobre lo no probado: Mongo real, los adaptadores de OpenAI directo/Gemini/DeepSeek/Anthropic con claves reales y el OCR real **no** se han ejercitado (Azure OpenAI sí, vía `make smoke-llm`) (ver `DECISIONES.md` §12).

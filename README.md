@@ -199,6 +199,17 @@ export GEMINI_API_KEY=... OPENAI_API_KEY=...
 uv run python -m cli.chat --llm gemini,openai      # cadena: si Gemini falla, OpenAI
 ```
 
+También hay `azure` (Azure OpenAI: `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_KEY`,
+`AZURE_OPENAI_DEPLOYMENT_NAME`, `AZURE_OPENAI_API_VERSION`). Para comprobar que un
+modelo real responde, sin guardar la clave en ningún lado:
+
+```bash
+make smoke-llm ENV_FILE=/ruta/a/un/.env SCENARIO=09
+```
+
+Lee solo las variables permitidas, en la memoria del proceso, e informa cuántas
+decisiones tomó el modelo y cuántas cayeron a reglas.
+
 Si el modelo falla, devuelve algo inválido o se manipula, **la decisión cae a
 la política por reglas** y el caso no se pierde. Agregar un proveedor es una
 entrada en `adapters/llm/registry.py`.
