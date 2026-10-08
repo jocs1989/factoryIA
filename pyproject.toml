@@ -1,6 +1,6 @@
 [project]
 name = "auto-equity-agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Agente que opera Elegibilidad, Perfilamiento, Simulacion y Documentos de Auto Equity"
 requires-python = ">=3.12,<3.13"
 dependencies = [
