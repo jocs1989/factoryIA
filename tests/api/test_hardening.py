@@ -138,3 +138,38 @@ def test_el_log_de_peticiones_no_lleva_datos_personales(
     dump = json.dumps(lines)
     assert "PELJ800101HDFRPN09" not in dump and "Juan" not in dump
     assert all(line["correlation_id"] for line in lines)
+
+
+def test_no_arranca_si_no_puede_escribir_la_bitacora(
+    tmp_path: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Sin bitacora no se opera: falla al arrancar, no en cada peticion."""
+    blocked = tmp_path / "solo-lectura"
+    blocked.mkdir()
+    audit_file = blocked / "audit.jsonl"
+    audit_file.touch()
+    audit_file.chmod(0o444)
+    settings = load_settings().model_copy(
+        update={"audit_backend": "jsonl", "audit_path": str(audit_file)}
+    )
+    rt = build_runtime(settings)
+    import os
+
+    if os.geteuid() == 0:  # root ignora los permisos: no se puede probar
+        pytest.skip("corriendo como root")
+    with (
+        pytest.raises(RuntimeError, match="no lista al arrancar"),
+        TestClient(create_app(rt)),
+    ):
+        pass
+
+
+def test_ready_detecta_la_bitacora_no_escribible(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def broken() -> None:
+        raise PermissionError("/data/audit.jsonl")
+
+    monkeypatch.setattr(client.app.state.runtime, "check_ready", broken)
+    r = client.get("/ready")
+    assert r.status_code == 503 and "audit" not in r.text

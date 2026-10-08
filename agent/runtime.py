@@ -119,6 +119,9 @@ def build_runtime(
         if settings.audit_backend == "jsonl"
         else MemoryAudit()
     )
+    probes: list[Callable[[], None]] = []
+    if isinstance(audit, JsonlAudit):
+        probes.append(audit.check_writable)
     if settings.repo_backend == "mongo":
         from adapters.case_repo_mongo import MongoCaseRepository
         from adapters.idempotency_mongo import MongoIdempotency
@@ -129,13 +132,11 @@ def build_runtime(
         inbox: Any = MongoInbox(db.tickets)
         idempotency: Any = MongoIdempotency(db.idempotency)
 
-        def check_ready() -> None:
+        def ping_mongo() -> None:
             client.admin.command("ping")
+
+        probes.append(ping_mongo)
     else:
-
-        def check_ready() -> None:
-            return None
-
         repo, inbox, idempotency = (
             MemoryCaseRepository(),
             MemoryInbox(),
@@ -192,6 +193,11 @@ def build_runtime(
         principal=principals.get("customer-agent"),
         clock=clock,
     )
+
+    def check_ready() -> None:
+        for probe in probes:
+            probe()
+
     return Runtime(
         settings=settings,
         deps=deps,

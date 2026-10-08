@@ -16,6 +16,15 @@ class JsonlAudit:
         self._lock = threading.Lock()
         path.parent.mkdir(parents=True, exist_ok=True)
 
+    def check_writable(self) -> None:
+        """Lanza `OSError` si no se puede agregar a la bitacora.
+
+        Sin bitacora no se debe operar: un servicio que no puede auditar
+        tiene que negarse a arrancar y a declararse listo.
+        """
+        with self._lock, self._path.open("a", encoding="utf-8"):
+            pass
+
     def record(self, event: AuditEvent) -> None:
         """Agrega una linea al archivo; es la unica escritura permitida."""
         line = event.model_dump_json()

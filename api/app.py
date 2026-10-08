@@ -121,6 +121,14 @@ def create_app(runtime: Runtime | None = None) -> FastAPI:
         configure_logging(rt_.settings.log_level, rt_.settings.log_format)
         # Fail-fast: un ambiente inseguro o incompleto no arranca.
         ensure_valid(rt_.settings, rt_.principals)
+        try:
+            rt_.check_ready()
+        except Exception as exc:
+            # Mejor no arrancar (y que el orquestador reinicie) que servir
+            # errores: p. ej. sin poder escribir la bitacora no se opera.
+            raise RuntimeError(
+                f"dependencia no lista al arrancar: {type(exc).__name__}"
+            ) from None
         app.state.runtime = rt_
         app.state.sessions = SessionStore(SESSION_TTL_S)
         app.state.attempts = AttemptLimiter(MAX_VERIFY_FAILURES)
