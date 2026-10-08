@@ -5,15 +5,19 @@ on:
     branches: [main]
   pull_request:
 
+# Minimo privilegio: el workflow solo lee el repositorio.
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   check:
-    name: lint, tipos, mocks, tests y evaluación
+    name: lint, tipos, SAST, docstrings, tests y evaluación
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -24,9 +28,13 @@ jobs:
       # Sin red ni credenciales: todo corre en modo mock.
       - run: make lint
       - run: make types
+      - name: SAST (bandit)
+        run: make sast
+      - name: Documentación de la superficie pública
+        run: make docstrings
       - run: make mocks-validate
       - run: make test
-      # Falla si aparece un falso OK, un falso rechazo o un bypass del gate.
+      # Set etiquetado + fuzzing + un LLM caótico: falla ante un falso OK.
       - run: make eval
 
   integration:
@@ -51,13 +59,31 @@ jobs:
         env:
           MONGO_URI: mongodb://localhost:27017
 
-  image:
-    name: construye la imagen
+  smoke:
+    name: pila completa con Docker y prueba de humo
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    needs: [check]
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t auto-equity-agent .
+      - uses: astral-sh/setup-uv@v5
+      - run: uv python install 3.12
+      - name: Construye y levanta api, mocks, mongo e interfaz
+        # --wait espera a los healthchecks; falla si algún servicio no queda sano.
+        run: docker compose up --build -d --wait
+      - name: La imagen corre sin privilegios y con sistema de solo lectura
+        run: |
+          test "$(docker compose exec -T api id -u)" != "0"
+          ! docker compose exec -T api touch /app/escritura-prohibida
+      - name: Conversación completa por HTTP
+        run: uv run --with httpx python -m scripts.smoke_http --base http://localhost:8000 --key demo-canal-no-usar-en-prod
+      - name: La interfaz sirve y reenvía a la API
+        run: curl -sf http://localhost:8080/api/health
+      - name: Logs si falló
+        if: failure()
+        run: docker compose logs --tail=200
+      - run: docker compose down -v
+        if: always()
 
   dependencias:
     name: auditoría de dependencias
