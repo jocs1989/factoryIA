@@ -47,17 +47,30 @@ contenido de los documentos y lo que responde el modelo.
 | T16 | **Proveedor caído o respuesta rara** | errores tipados, reintentables vs no; el caso no cambia; contratos validados | `test_proveedor_caido_es_error_y_no_cambia_el_caso` |
 | T17 | **Bucle del agente** (costo, DoS) | tope de pasos y de violaciones por turno ⇒ escala | `test_tope_de_pasos_...`, `test_una_tool_fuera_de_la_lista_blanca...` |
 | T18 | **Montos con `float`** (errores de redondeo) | `Decimal`; los montos de entrada rechazan decimales binarios | `test_montos_no_aceptan_flotantes` |
-| T19 | **Dependencias vulnerables** | versiones acotadas en `pyproject.toml` | pendiente: `pip-audit` en CI |
+| T19 | **Dependencias vulnerables** | `uv.lock` congelado; `pip-audit` informativo en CI (sin vulnerabilidades conocidas al revisarlo) | `.github/workflows/ci.yml` |
+| T20 | **Negar el servicio al cliente legítimo** equivocando a propósito la verificación | bloqueo **temporal** con ventana, no permanente; `Retry-After` | `test_el_bloqueo_es_temporal...`, `test_el_bloqueo_de_verificacion_trae_retry_after` |
+| T21 | **Agotar memoria** creando sesiones | vencimiento, purga y tope de tamaño del almacén | `test_crear_sesiones_purga...`, `test_el_almacen_tiene_tope...` |
+| T22 | **Abuso del costo del LLM** con muchos mensajes | límite de 30 mensajes por minuto y sesión | `test_limite_de_mensajes_por_sesion` |
+| T23 | **Fuga de PII por los logs o por un error** | redacción por campo y por contenido; error interno sin traza hacia el cliente; 422 sin eco de valores | `test_el_log_de_peticiones...`, `test_un_error_interno_no_filtra...` |
+| T24 | **Configuración insegura en producción** (anónimo, fecha congelada, demo, claves débiles) | validación al arrancar que se niega a iniciar | `tests/test_config_validation.py` |
+| T25 | **Operar sin auditoría** (volumen sin permisos) | el arranque falla y `/ready` da 503 | `test_no_arranca_si_no_puede_escribir_la_bitacora` |
+| T26 | **Un cuerpo enorme** agota el proceso | tope de 64 KB antes de procesar | `test_un_cuerpo_enorme_se_rechaza...` |
+| T27 | **Escalada de privilegios en el contenedor** | usuario sin privilegios, solo lectura, sin capacidades, `no-new-privileges` | job `smoke` del CI |
+| T28 | **Estado del caso corrupto o con claves inventadas** | esquema `CaseFacts` con `extra=forbid` al escribir y cargar | `tests/domain/test_facts.py` |
+| T29 | **Un modelo caótico o hostil** rompe invariantes | fuzzing con acciones, argumentos y respuestas al azar | `tests/evals/test_fuzz.py` |
 
 ## 4. Riesgo residual (lo que aún falta)
 
 | Riesgo | Estado |
 |---|---|
-| Sesiones y contadores de intentos en memoria de un proceso | con varias réplicas hacen falta Redis o Mongo con TTL |
-| PII en `Case.data` sin cifrado en reposo | cifrado a nivel de campo + política de retención |
+| Sesiones, bloqueo y límite de tasa en memoria de **un** proceso | tienen vencimiento y tope, pero con varias réplicas hacen falta Redis o Mongo con TTL (ADR-0006) |
+| PII en `Case.data` **sin cifrado en reposo** | cifrado a nivel de campo + política de retención |
 | El detector de inyección es heurístico | no se confía en él: es evidencia para el asesor, no una barrera |
 | Autenticación del asesor = una API key | SSO/MFA y rotación en producción |
-| Sin límite de tasa en la API | agregar en el gateway |
+| Sin límite de tasa por IP ni WAF | agregar en el gateway; el límite actual es por sesión |
+| La interfaz de prueba (`web/`) inyecta credenciales de canal **y** de asesor | solo para uso local; no exponer a una red |
 | Tickets y caso no se escriben en una transacción | el orden elegido deja fallos benignos; con réplica Mongo se puede usar transacción |
-| Los adaptadores de LLM no se probaron con claves reales | probar en un entorno con credenciales antes de usarlos |
-| Dependencias sin auditoría automática | `pip-audit` / Dependabot |
+| Los adaptadores de OpenAI directo, Gemini, DeepSeek y Anthropic no se probaron con claves reales | solo Azure OpenAI se ejercitó con un modelo real |
+| Sin DAST ni pruebas de penetración | pendiente |
+| Sin trazas distribuidas ni métricas en vivo | pendiente (OpenTelemetry) |
+| Los 15 primeros commits llevan `Co-authored-by` (prohibido por el estándar) | reescribir la historia exige `push --force`; pendiente de aprobación |
