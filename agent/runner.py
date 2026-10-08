@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import threading
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 from langgraph.types import Command
@@ -28,6 +31,22 @@ class ConversationRunner:
     def __init__(self, deps: GraphDeps, checkpointer: Any) -> None:
         self._deps = deps
         self._graph = build_graph(deps, checkpointer)
+        self._locks: dict[str, threading.Lock] = {}
+        self._guard = threading.Lock()
+
+    @contextmanager
+    def _case_turn(self, case_id: str) -> Iterator[None]:
+        """Serializa los turnos de UN caso dentro del proceso.
+
+        Dos mensajes simultaneos sobre el mismo caso compartirian el mismo
+        hilo de LangGraph y se pisarian el checkpoint. El control optimista
+        de version protege el caso aunque haya varias replicas; este cerrojo
+        evita ademas el trabajo (y el costo de LLM) de turnos que fallarian.
+        """
+        with self._guard:
+            lock = self._locks.setdefault(case_id, threading.Lock())
+        with lock:
+            yield
 
     def _config(self, case_id: str) -> dict[str, Any]:
         return {"configurable": {"thread_id": case_id}}
@@ -39,6 +58,11 @@ class ConversationRunner:
         return case
 
     def turn(self, session: Session, event: CustomerEvent) -> TurnResult:
+        """Corre un turno de conversacion; uno a la vez por caso."""
+        with self._case_turn(session.case_id):
+            return self._turn(session, event)
+
+    def _turn(self, session: Session, event: CustomerEvent) -> TurnResult:
         case = self._load(session.case_id)
         if case.stage is Stage.ESCALATED:
             # Un asesor ya tiene el caso: no se corre el agente.
@@ -63,6 +87,10 @@ class ConversationRunner:
 
     def resume_after_advisor(self, session: Session) -> TurnResult:
         """El asesor ya resolvio el ticket: el agente continua."""
+        with self._case_turn(session.case_id):
+            return self._resume(session)
+
+    def _resume(self, session: Session) -> TurnResult:
         config = self._config(session.case_id)
         snapshot = self._graph.get_state(config)
         since = 0
