@@ -1,4 +1,14 @@
 .venv
 .git
+.github
 __pycache__
+*.pyc
 reports
+tests
+docs
+web
+.env
+.mypy_cache
+.ruff_cache
+.pytest_cache
+.coverage

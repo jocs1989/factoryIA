@@ -2,6 +2,11 @@
 # de entregar. Todo corre sin red ni credenciales (AGENT_ENV=mock).
 COVERAGE_MIN ?= 85
 DOCSTRINGS_MIN ?= 90
+# Puertos del equipo para `make start` (cambialos si estan ocupados).
+export API_PORT ?= 8000
+export WEB_PORT ?= 8080
+export MOCKS_PORT ?= 9000
+export MONGO_PORT ?= 27017
 export AGENT_ENV ?= mock
 PKGS = api config domain adapters tools mocks agent observability cli scripts
 
@@ -79,13 +84,13 @@ start:
 	docker compose up --build -d
 	@echo "esperando a que la API responda..."
 	@for i in $$(seq 1 60); do \
-		curl -sf http://localhost:8000/health >/dev/null && break; sleep 2; done
-	@curl -sf http://localhost:8000/health >/dev/null \
+		curl -sf http://localhost:$(API_PORT)/health >/dev/null && break; sleep 2; done
+	@curl -sf http://localhost:$(API_PORT)/health >/dev/null \
 		|| { echo "la API no respondio: revisa 'make logs'"; exit 1; }
 	@echo ""
-	@echo "  Interfaz visual : http://localhost:8080"
-	@echo "  API (docs)      : http://localhost:8000/docs"
-	@echo "  Mocks           : http://localhost:9000/_mock/health"
+	@echo "  Interfaz visual : http://localhost:$(WEB_PORT)"
+	@echo "  API (docs)      : http://localhost:$(API_PORT)/docs"
+	@echo "  Mocks           : http://localhost:$(MOCKS_PORT)/_mock/health"
 	@echo "  Detener         : make stop     Logs: make logs"
 
 stop:

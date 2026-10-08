@@ -2,6 +2,9 @@
 #
 #   docker compose up --build        ->  http://localhost:8080
 #
+# Si un puerto del equipo esta ocupado, cambialo sin tocar este archivo:
+#   WEB_PORT=8081 API_PORT=8001 MOCKS_PORT=9001 MONGO_PORT=27018 make start
+#
 # AVISO: el servicio `web` pone las credenciales (canal y asesor) del lado del
 # servidor, así que quien llegue al puerto 8080 actúa como cliente Y como
 # asesor. Es una interfaz de PRUEBA LOCAL: no la expongas a una red.
@@ -9,14 +12,33 @@
 # Las claves de abajo tienen un valor DE DEMO para que arranque sin
 # configurar nada. Para algo que no sea una prueba local, defínelas tú:
 #   AGENT_CLIENT_API_KEY=... ADVISOR_API_KEY=... docker compose up --build
+# Controles minimos para los contenedores propios: sin privilegios nuevos, sin
+# capacidades de Linux y con el sistema de archivos de solo lectura.
+x-hardened: &hardened
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
 services:
   mongo:
     image: mongo:7
-    ports: ["27017:27017"]
+    ports: ["${MONGO_PORT:-27017}:27017"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ping:1}).ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
   mocks:
     build: .
-    command: ["uv", "run", "uvicorn", "mocks.server:app", "--host", "0.0.0.0", "--port", "9000"]
-    ports: ["9000:9000"]
+    command: ["uvicorn", "mocks.server:app", "--host", "0.0.0.0", "--port", "9000"]
+    ports: ["${MOCKS_PORT:-9000}:9000"]
+    <<: *hardened
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:9000/_mock/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
   api:
     build: .
     environment:
@@ -42,8 +64,11 @@ services:
       FIXED_TODAY: "2026-10-05"
       AUDIT_PATH: /data/audit.jsonl
     volumes: ["audit:/data"]
-    ports: ["8000:8000"]
-    depends_on: [mongo, mocks]
+    ports: ["${API_PORT:-8000}:8000"]
+    <<: *hardened
+    depends_on:
+      mongo: {condition: service_healthy}
+      mocks: {condition: service_healthy}
   web:
     image: nginx:1.27-alpine
     environment:
@@ -52,7 +77,8 @@ services:
     volumes:
       - ./web/index.html:/usr/share/nginx/html/index.html:ro
       - ./web/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-    ports: ["8080:80"]
-    depends_on: [api]
+    ports: ["${WEB_PORT:-8080}:80"]
+    depends_on:
+      api: {condition: service_healthy}
 volumes:
   audit:
