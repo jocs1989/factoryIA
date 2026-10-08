@@ -25,3 +25,9 @@ tener respaldo si uno falla, y correr todo sin API key.
   pero **no se han ejercitado con claves reales**.
 - El LLM guionado demuestra el cableado y la validación, no la calidad de un
   modelo real; eso se mide aparte.
+
+## Alternativas descartadas
+
+- **SDK de cada proveedor:** más dependencias y pruebas que exigen red; `httpx` directo se prueba con transportes simulados.
+- **Una librería multi-proveedor (p. ej. LiteLLM):** oculta el contrato de errores y el formato de cada API, justo lo que se quiere controlar y probar.
+- **Un solo proveedor fijo:** una caída del proveedor tumbaría la operación; la cadena con respaldo y circuit breaker lo evita.

@@ -21,3 +21,9 @@ y el agente pueden actuar sobre el mismo caso. Los procesos se reinician.
 - Reiniciar el proceso no pierde casos. Un asesor ve el mismo estado que el
   agente. Un conflicto de versión se reintenta con el estado fresco.
 - Hay que cuidar que lo importante viva en `Case.data` y no solo en el grafo.
+
+## Alternativas descartadas
+
+- **Confiar solo en el estado del framework de orquestación:** se pierde al reiniciar, un asesor no lo ve y no se puede auditar.
+- **Reconstruir el estado desde el historial del chat:** depende de lo que el modelo "recuerde" y es el primer lugar donde se cuela una inyección.
+- **Event sourcing completo:** daría una línea de tiempo perfecta, pero es más complejo de lo que el problema acotado exige; la bitácora de decisiones cubre la auditoría.

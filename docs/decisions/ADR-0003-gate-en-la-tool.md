@@ -24,3 +24,9 @@ de tools por etapa, scope por principal, y este gate.
 - Se mide con `make eval`: 0 falsos OK, 0 bypass; hay una prueba que rompe el
   gate para comprobar que la evaluación lo detectaría.
 - Cuesta recalcular en cada intento; es aceptable frente al riesgo.
+
+## Alternativas descartadas
+
+- **Validar solo en el grafo (antes de llamar a la tool):** cualquier otro camino hacia la tool se salta el control.
+- **Dejar que el modelo decida si el expediente está listo:** el error caro (un falso OK) quedaría en manos del componente menos reproducible.
+- **Guardar una bandera `validado=true` y confiar en ella:** un documento ligado después de validar, o una simulación alterada, pasarían desapercibidos.
