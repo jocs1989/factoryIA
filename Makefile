@@ -5,7 +5,7 @@ export AGENT_ENV ?= mock
 PKGS = api config domain adapters tools mocks agent observability cli scripts
 
 .PHONY: sync lint types test eval demo report run mocks-validate mocks-serve \
-	record-llm integration up check
+	record-llm smoke-llm integration up check
 
 sync:
 	uv sync --group dev
@@ -50,6 +50,11 @@ mocks-serve:
 # Regraba mocks/llm_responses/ desde la politica por reglas.
 record-llm:
 	uv run python -m scripts.record_llm_scripts
+
+# Prueba de humo con un LLM real. La clave se lee solo en memoria:
+#   make smoke-llm ENV_FILE=/ruta/al/env SCENARIO=01
+smoke-llm:
+	uv run python -m scripts.smoke_llm --env-file "$(ENV_FILE)" --scenario $(or $(SCENARIO),01) --timeline
 
 # Contra un MongoDB real: `MONGO_URI=mongodb://localhost:27017 make integration`
 integration:
