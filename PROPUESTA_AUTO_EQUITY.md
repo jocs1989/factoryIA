@@ -458,6 +458,8 @@ incluido).
 
 ### Progreso de construcción
 
+> Las cifras de cada fase son las de ese momento. Las actuales (545 pruebas, 92 % de cobertura, 80 corridas de evaluación sin falsos OK) están en el `README.md`.
+
 Se marca aquí al terminar cada punto (`[x]`). Repo construido en esta misma carpeta.
 
 - [x] Esqueleto del repo: carpetas, `pyproject`, `Makefile`, `config/`, `/health`, lint y mypy limpios
